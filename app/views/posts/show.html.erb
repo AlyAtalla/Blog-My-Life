@@ -1,0 +1,42 @@
+<div class="card mb-4">
+  <div class="card-body">
+    <h2 class="card-title"><%= @post.title %></h2>
+    <p class="text-muted">By <%= link_to @post.user.name, @post.user %> • <%= @post.created_at.strftime('%b %-d, %Y') %></p>
+    <div class="mt-3"><%= simple_format(@post.body) %></div>
+
+    <div class="mt-3">
+      <% if logged_in? && current_user == @post.user %>
+        <%= link_to 'Edit', edit_post_path(@post), class: 'btn btn-outline-primary me-2' %>
+        <%= link_to 'Delete', @post, method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger' %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<section id="comments" class="mb-4">
+  <h4>Comments</h4>
+  <ul class="list-group mb-3">
+    <% @post.comments.order(created_at: :asc).each do |c| %>
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div>
+          <strong><%= c.user.name %></strong>
+          <div><%= c.body %></div>
+        </div>
+        <% if logged_in? && (c.user == current_user || @post.user == current_user) %>
+          <div><%= link_to 'Delete', [@post, c], method: :delete, data: { confirm: 'Delete comment?' }, class: 'btn btn-sm btn-outline-danger' %></div>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <% if logged_in? %>
+    <%= form_with model: [@post, @comment], local: true do |f| %>
+      <div class="mb-2">
+        <%= f.text_area :body, rows: 3, class: 'form-control', placeholder: 'Write a comment...' %>
+      </div>
+      <%= f.submit 'Post Comment', class: 'btn btn-primary' %>
+    <% end %>
+  <% else %>
+    <p><%= link_to 'Log in', login_path %> to comment.</p>
+  <% end %>
+</section>

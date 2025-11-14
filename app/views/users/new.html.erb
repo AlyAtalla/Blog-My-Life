@@ -2,6 +2,16 @@
   <div class="col-md-6">
     <h2>Sign up</h2>
     <%= form_with model: @user, local: true do |f| %>
+      <% if @user.errors.any? %>
+        <div class="alert alert-danger">
+          <h5>There were problems creating your account:</h5>
+          <ul>
+            <% @user.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
       <div class="mb-3">
         <%= f.label :name, class: 'form-label' %>
         <%= f.text_field :name, class: 'form-control' %>

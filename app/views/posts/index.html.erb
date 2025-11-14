@@ -1,20 +1,56 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>All posts</h2>
+<div class="mb-4">
   <% if logged_in? %>
-    <%= link_to 'New Post', new_post_path, class: 'btn btn-success' %>
-  <% end %>
-</div>
-
-<div class="row">
-  <% @posts.each do |post| %>
-    <div class="col-md-6 mb-3">
-      <div class="card h-100">
-        <div class="card-body">
-          <h5 class="card-title"><%= link_to post.title, post, class: 'stretched-link' %></h5>
-          <p class="card-subtitle mb-2 text-muted">By <%= link_to post.user.name, post.user %> • <%= time_ago_in_words(post.created_at) %> ago</p>
-          <p class="card-text mt-2"><%= truncate(post.body, length: 220) %></p>
-        </div>
+    <div class="p-5 text-white rounded" style="background-image: url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1650&q=80'); background-size: cover; background-position: center;">
+      <div class="container">
+        <h1 class="display-5">Welcome, <%= current_user.name %>!</h1>
+        <p class="lead">Enjoy the latest posts — like, comment, and share your thoughts.</p>
       </div>
+    </div>
+  <% else %>
+    <div class="p-5 text-center text-white rounded mb-3" style="background-image: url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1650&q=80'); background-size: cover; background-position: center;">
+      <div class="container">
+        <h1 class="display-5">Welcome to Blog My Life</h1>
+        <p class="lead">Sign up or login to interact with posts.</p>
+      </div>
+    </div>
+  <% end %>
+  <% if logged_in? %>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2>All posts</h2>
+      <%= link_to 'New Post', new_post_path, class: 'btn btn-success' %>
+    </div>
+
+    <div class="row">
+      <% @posts.each do |post| %>
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            <% if post.image_url.present? %>
+              <%= link_to post_path(post) do %>
+                <%= image_tag post.image_url, class: 'card-img-top', alt: post.title %>
+              <% end %>
+            <% end %>
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title"><%= link_to post.title, post, class: 'stretched-link text-decoration-none' %></h5>
+              <p class="text-muted small">By <%= link_to post.user.name, post.user %> • <%= time_ago_in_words(post.created_at) %> ago</p>
+              <p class="card-text"> <%= truncate(post.body, length: 120) %> </p>
+              <div class="mt-auto d-flex justify-content-between align-items-center">
+                <div>
+                  <small class="text-muted"><%= pluralize(post.likes_count, 'like') %> • <%= pluralize(post.comments.count, 'comment') %></small>
+                </div>
+                <div>
+                  <%= link_to 'View', post_path(post), class: 'btn btn-sm btn-outline-primary me-2' %>
+                  <% like = post.likes.find { |l| l.user_id == current_user.id } %>
+                  <% if like %>
+                    <%= button_to 'Unlike', post_like_path(post, like), method: :delete, class: 'btn btn-sm btn-danger' %>
+                  <% else %>
+                    <%= button_to 'Like', post_likes_path(post), method: :post, class: 'btn btn-sm btn-primary' %>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
     </div>
   <% end %>
 </div>

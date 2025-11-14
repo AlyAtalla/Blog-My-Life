@@ -2,6 +2,7 @@ class User < ApplicationRecord
   has_secure_password
   has_many :posts, dependent: :destroy
   has_many :comments, dependent: :destroy
+  has_many :likes, dependent: :destroy
 
   before_save { email.downcase! }
   validates :name, presence: true, length: { maximum: 100 }

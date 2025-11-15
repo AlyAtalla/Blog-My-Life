@@ -9,5 +9,10 @@
     <%= f.text_area :body, rows: 8, class: 'form-control' %>
   </div>
 
+  <div class="mb-3">
+    <%= f.label :image_url, 'Image URL (optional)', class: 'form-label' %>
+    <%= f.text_field :image_url, class: 'form-control', placeholder: 'https://example.com/image.jpg' %>
+  </div>
+
   <%= f.submit class: 'btn btn-primary' %>
 <% end %>

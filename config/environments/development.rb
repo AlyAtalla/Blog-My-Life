@@ -40,6 +40,25 @@ Rails.application.configure do
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
+  # Configure SMTP via environment variables. To send emails via Gmail, set these in your environment:
+  # SMTP_ADDRESS=smtp.gmail.com SMTP_PORT=587 SMTP_USERNAME=your@gmail.com SMTP_PASSWORD=your_app_password CONTACT_RECEIVER_EMAIL=aliatalla93@gmail.com
+  if ENV['SMTP_ADDRESS'].present?
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.raise_delivery_errors = true
+    config.action_mailer.smtp_settings = {
+      address: ENV['SMTP_ADDRESS'],
+      port: ENV.fetch('SMTP_PORT', 587).to_i,
+      user_name: ENV['SMTP_USERNAME'],
+      password: ENV['SMTP_PASSWORD'],
+      authentication: :login,
+      enable_starttls_auto: true
+    }
+  else
+    # default to :smtp but do not raise if not configured; developer can use Letter Opener or set ENV vars
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.raise_delivery_errors = false
+  end
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 

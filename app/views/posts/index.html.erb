@@ -39,6 +39,7 @@
                 </div>
                 <div>
                   <%= link_to 'View', post_path(post), class: 'btn btn-sm btn-outline-primary me-2' %>
+                  <button class="btn btn-sm btn-outline-secondary me-2" onclick="copyToClipboard('<%= request.base_url + post_path(post) %>')">Copy</button>
                   <% like = post.likes.find { |l| l.user_id == current_user.id } %>
                   <% if like %>
                     <%= button_to 'Unlike', post_like_path(post, like), method: :delete, class: 'btn btn-sm btn-danger' %>
@@ -51,6 +52,10 @@
           </div>
         </div>
       <% end %>
+    </div>
+    
+    <div class="mt-4">
+      <%= render 'contact_messages/form' if logged_in? %>
     </div>
   <% end %>
 </div>

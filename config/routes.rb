@@ -8,6 +8,8 @@ Rails.application.routes.draw do
     resources :likes, only: [:create, :destroy]
   end
 
+  resources :contact_messages, only: [:new, :create], path: 'contact'
+
   get '/login', to: 'sessions#new', as: :login
   post '/login', to: 'sessions#create'
   delete '/logout', to: 'sessions#destroy', as: :logout

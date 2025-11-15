@@ -18,9 +18,9 @@
         </div>
         <div>
           <% if logged_in? && current_user == @post.user %>
-            <%= link_to 'Edit', edit_post_path(@post), class: 'btn btn-outline-primary me-2' %>
-            <%= link_to 'Delete', @post, method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger' %>
-          <% end %>
+              <%= link_to 'Edit', edit_post_path(@post), class: 'btn btn-outline-primary me-2' %>
+              <%= button_to 'Delete', @post, method: :delete, data: { confirm: 'Are you sure?' }, form: { class: 'd-inline' }, class: 'btn btn-danger' %>
+            <% end %>
         </div>
       </div>
     </div>
@@ -37,7 +37,7 @@
           <div><%= c.body %></div>
         </div>
         <% if logged_in? && (c.user == current_user || @post.user == current_user) %>
-          <div><%= link_to 'Delete', [@post, c], method: :delete, data: { confirm: 'Delete comment?' }, class: 'btn btn-sm btn-outline-danger' %></div>
+          <div><%= button_to 'Delete', post_comment_path(@post, c), method: :delete, data: { confirm: 'Delete comment?' }, form: { class: 'd-inline' }, class: 'btn btn-sm btn-outline-danger' %></div>
         <% end %>
       </li>
     <% end %>
@@ -53,4 +53,15 @@
   <% else %>
     <p><%= link_to 'Log in', login_path %> to comment.</p>
   <% end %>
+</section>
+
+<section class="mb-4">
+  <h4>Share</h4>
+  <div class="d-flex gap-2">
+    <% post_url = request.base_url + post_path(@post) %>
+    <a href="https://www.facebook.com/sharer/sharer.php?u=<%= CGI.escape(post_url) %>" target="_blank" class="btn btn-outline-primary">Facebook</a>
+    <a href="https://www.linkedin.com/sharing/share-offsite/?url=<%= CGI.escape(post_url) %>" target="_blank" class="btn btn-outline-info">LinkedIn</a>
+    <a href="https://twitter.com/intent/tweet?url=<%= CGI.escape(post_url) %>&text=<%= CGI.escape(@post.title) %>" target="_blank" class="btn btn-outline-secondary">Twitter</a>
+    <button type="button" class="btn btn-outline-dark" onclick="copyToClipboard('<%= post_url %>')">Copy link</button>
+  </div>
 </section>

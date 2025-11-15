@@ -54,9 +54,17 @@ Rails.application.configure do
       enable_starttls_auto: true
     }
   else
-    # default to :smtp but do not raise if not configured; developer can use Letter Opener or set ENV vars
-    config.action_mailer.delivery_method = :smtp
-    config.action_mailer.raise_delivery_errors = false
+    # When SMTP env vars are not provided, use letter_opener (if available)
+    # so developers can preview sent emails locally. If `letter_opener` is not
+    # present, fall back to SMTP but don't raise delivery errors.
+    if defined?(LetterOpener)
+      config.action_mailer.delivery_method = :letter_opener
+      config.action_mailer.perform_deliveries = true
+      config.action_mailer.raise_delivery_errors = false
+    else
+      config.action_mailer.delivery_method = :smtp
+      config.action_mailer.raise_delivery_errors = false
+    end
   end
 
   # Print deprecation notices to the Rails logger.

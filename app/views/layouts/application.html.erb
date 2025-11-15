@@ -23,6 +23,24 @@
       /* translucent content area for readability */
       .content-surface { background: rgba(255,255,255,0.92); padding: 1.25rem; border-radius: .5rem; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
       @media (max-width: 768px) { .content-surface { padding: .75rem; } }
+      /* colorful gradients for post cards */
+      .post-card { position: relative; overflow: hidden; color: #222; }
+      .post-card .card-body { background: rgba(255,255,255,0.88); }
+      /* ensure card images have consistent size and cover */
+      .card-img-top { width: 100%; height: 200px; object-fit: cover; display: block; }
+      .gradient-1 { background: linear-gradient(135deg,#FFDEE9 0%,#B5FFFC 100%); }
+      .gradient-2 { background: linear-gradient(135deg,#E0C3FC 0%,#8EC5FC 100%); }
+      .gradient-3 { background: linear-gradient(135deg,#F9D29D 0%,#F78FA7 100%); }
+      .gradient-4 { background: linear-gradient(135deg,#C9FFBF 0%,#FFAFBD 100%); }
+      .gradient-5 { background: linear-gradient(135deg,#A1C4FD 0%,#C2E9FB 100%); }
+      .gradient-6 { background: linear-gradient(135deg,#FF9A9E 0%,#FAD0C4 100%); }
+
+      /* entry animation */
+      .post-card { opacity: 0; transform: translateY(18px) scale(0.995); transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1); }
+      .post-card.visible { opacity: 1; transform: translateY(0) scale(1); }
+
+      /* pagination style tweak */
+      .pagination .page-item.active .page-link { background-color: #0d6efd; border-color: #0d6efd; color: white; }
     </style>
   </head>
 
@@ -77,6 +95,33 @@
           alert('Link copied to clipboard');
         }
       }
+      // IntersectionObserver to reveal post cards with a tiny stagger.
+      // Initialize on full load and on Turbo visits so animations run after pagination.
+      function initPostCards() {
+        const cards = Array.from(document.querySelectorAll('.post-card'));
+        if(cards.length === 0) return;
+        if('IntersectionObserver' in window) {
+          let io = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+              if(entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                obs.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.08 });
+          cards.forEach((c, i) => { setTimeout(()=> io.observe(c), i * 80); });
+        } else {
+          cards.forEach((c)=> c.classList.add('visible'));
+        }
+
+        // Safety fallback: if Turbo navigation didn't trigger observation, reveal cards after 700ms
+        setTimeout(() => {
+          cards.forEach(c => c.classList.add('visible'));
+        }, 700);
+      }
+
+      document.addEventListener('DOMContentLoaded', initPostCards);
+      document.addEventListener('turbo:load', initPostCards);
     </script>
   </body>
 </html>

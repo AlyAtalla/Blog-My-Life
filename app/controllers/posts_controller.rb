@@ -5,7 +5,17 @@ class PostsController < ApplicationController
 
   # GET /posts or /posts.json
   def index
-    @posts = Post.includes(:user, :likes, :comments).order(created_at: :desc)
+    per_page = 9
+    page = params.fetch(:page, 1).to_i
+    page = 1 if page < 1
+
+    scope = Post.includes(:user, :likes, :comments).order(created_at: :desc)
+    @total_count = scope.count
+    @per_page = per_page
+    @page = page
+    @total_pages = (@total_count.to_f / @per_page).ceil
+    @posts = scope.offset((@page - 1) * @per_page).limit(@per_page)
+    Rails.logger.debug "[Pagination] page=#{@page} per_page=#{@per_page} total=#{@total_count} offset=#{(@page - 1) * @per_page} loaded_ids=#{@posts.pluck(:id)}"
   end
 
   # GET /posts/1 or /posts/1.json

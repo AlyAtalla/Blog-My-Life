@@ -7,6 +7,8 @@ class ApplicationController < ActionController::Base
 
   helper_method :current_user, :logged_in?
 
+  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
+
   private
 
   def current_user
@@ -26,5 +28,10 @@ class ApplicationController < ActionController::Base
     unless logged_in?
       redirect_to login_path, alert: 'Please log in to continue'
     end
+  end
+
+  def record_not_found(exception = nil)
+    logger.info "Record not found: #{exception&.message}"
+    redirect_to posts_path, alert: 'The requested item was not found.'
   end
 end

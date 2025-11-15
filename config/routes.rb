@@ -8,6 +8,10 @@ Rails.application.routes.draw do
     resources :likes, only: [:create, :destroy]
   end
 
+  # Profile routes for current user
+  get '/profile', to: 'users#edit', as: :profile
+  patch '/profile', to: 'users#update'
+
   resources :contact_messages, only: [:new, :create], path: 'contact'
 
   get '/login', to: 'sessions#new', as: :login

@@ -41,31 +41,60 @@
 
       /* pagination style tweak */
       .pagination .page-item.active .page-link { background-color: #0d6efd; border-color: #0d6efd; color: white; }
+      /* dropdown icon visually distinct from the main navbar toggler */
+      .dropdown-icon { font-size: 1.1rem; display: inline-block; line-height: 1; padding: 0 .35rem; }
+      .dropdown-icon[aria-hidden] { color: inherit; }
+      /* ensure dropdown menus appear above page content (prevent being covered) */
+      .dropdown-menu { z-index: 2000; }
     </style>
   </head>
 
   <body class="<%= logged_in? ? 'bg-logged-in' : 'bg-guest' %>">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-      <div class="container">
-        <a class="navbar-brand" href="<%= root_path %>">Blog My Life</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+    <% unless content_for?(:plain_layout) %>
+      <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+          <a class="navbar-brand" href="<%= root_path %>">Blog My Life</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+          </button>
 
-        <div class="collapse navbar-collapse" id="navMenu">
-          <ul class="navbar-nav ms-auto">
-            <% if logged_in? %>
-              <li class="nav-item"><span class="nav-link">Signed in as <%= current_user.name %></span></li>
-              <li class="nav-item"><%= link_to 'New Post', new_post_path, class: 'nav-link' %></li>
-              <li class="nav-item"><%= button_to 'Logout', logout_path, method: :delete, form: { class: 'd-inline' }, class: 'nav-link btn btn-link p-0' %></li>
-            <% else %>
-              <li class="nav-item"><%= link_to 'Sign up', new_user_path, class: 'nav-link' %></li>
-              <li class="nav-item"><%= link_to 'Login', login_path, class: 'nav-link' %></li>
-            <% end %>
-          </ul>
+          <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav ms-auto align-items-center">
+              <% if logged_in? %>
+                <li class="nav-item d-none d-md-block"><span class="nav-link">Signed in as <%= current_user.name %></span></li>
+                <li class="nav-item d-none d-md-block"><%= link_to 'New Post', new_post_path, class: 'nav-link' %></li>
+
+                <!-- Account menu: replaced dual Bootstrap dropdowns with a single custom toggle -->
+                <!-- The button below is a single control (always visible) that opens a custom menu appended to document.body. -->
+                <li class="nav-item">
+                  <button id="userMenuToggle" class="btn btn-link p-0" aria-haspopup="true" aria-expanded="false" type="button" style="color:inherit;">
+                    <span class="dropdown-icon" aria-hidden="true">&#8942;</span>
+                  </button>
+                </li>
+              <% else %>
+                <li class="nav-item"><%= link_to 'Sign up', new_user_path, class: 'nav-link' %></li>
+                <li class="nav-item"><%= link_to 'Login', login_path, class: 'nav-link' %></li>
+              <% end %>
+            </ul>
+          </div>
         </div>
-      </div>
-    </nav>
+        <% if logged_in? %>
+          <!-- Custom account menu contents (kept here as template; menu will be moved to body when opened) -->
+          <template id="userMenuTemplate">
+            <ul class="dropdown-menu dropdown-menu-end" id="userMenuCustom" role="menu">
+              <li><%= link_to 'Home', root_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'My Profile', profile_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'My Posts', posts_path(user_id: current_user.id), class: 'dropdown-item' %></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><%= link_to 'New Post', new_post_path, class: 'dropdown-item' %></li>
+              <li>
+                <%= button_to 'Logout', logout_path, method: :delete, form: { class: 'd-inline' }, class: 'dropdown-item p-0 m-0' %>
+              </li>
+            </ul>
+          </template>
+        <% end %>
+      </nav>
+    <% end %>
 
     <div class="container content-surface mt-3 mb-5">
       <% flash.each do |k, v| %>
@@ -122,6 +151,159 @@
 
       document.addEventListener('DOMContentLoaded', initPostCards);
       document.addEventListener('turbo:load', initPostCards);
+      // Ensure Bootstrap dropdowns are initialized after Turbo navigation
+      function initBootstrapDropdowns(){
+        try{
+          if(window.bootstrap && window.bootstrap.Dropdown){
+            const els = Array.from(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+            if(els.length === 0){ console.debug('initBootstrapDropdowns: no dropdown toggles found'); }
+            els.forEach(el => {
+              try{
+                // avoid re-initializing if already attached
+                if(!el._bootstrapDropdown){
+                  // store instance on element for idempotence
+                  el._bootstrapDropdown = new window.bootstrap.Dropdown(el);
+                  console.debug('initBootstrapDropdowns: attached Dropdown to', el);
+                } else {
+                  console.debug('initBootstrapDropdowns: already initialized', el);
+                }
+              }catch(e){ console.warn('initBootstrapDropdowns: failed for element', el, e); }
+            });
+          }
+        }catch(e){ console.error('Dropdown init error', e); }
+      }
+      document.addEventListener('DOMContentLoaded', initBootstrapDropdowns);
+      document.addEventListener('turbo:load', initBootstrapDropdowns);
+      // Ensure Collapse components (navbar collapse etc.) are initialized
+      // after Turbo navigations. Bootstrap's data-api may not re-bind on
+      // partial page updates, so create instances for target collapse
+      // elements without toggling them immediately.
+      function initBootstrapCollapses(){
+        try{
+          if(window.bootstrap && window.bootstrap.Collapse){
+            const toggles = Array.from(document.querySelectorAll('[data-bs-toggle="collapse"]'));
+            if(toggles.length === 0){ console.debug('initBootstrapCollapses: no collapse toggles found'); }
+            toggles.forEach(toggle => {
+              try{
+                // Determine target selector from data-bs-target or href
+                let selector = toggle.getAttribute('data-bs-target') || toggle.getAttribute('href');
+                if(!selector) return;
+                // If href is a full URL, extract the hash
+                try{ if(selector.startsWith(window.location.origin)) selector = (new URL(selector)).hash; }catch(e){}
+                if(!selector || selector.indexOf('#') === -1) return;
+                const targets = Array.from(document.querySelectorAll(selector));
+                targets.forEach(target => {
+                  try{
+                    // Avoid re-initializing an existing instance
+                    if(!bootstrap.Collapse.getInstance(target)){
+                      new bootstrap.Collapse(target, { toggle: false });
+                      console.debug('initBootstrapCollapses: initialized', target);
+                    } else {
+                      console.debug('initBootstrapCollapses: already initialized', target);
+                    }
+                  }catch(e){ console.warn('initBootstrapCollapses: failed for target', target, e); }
+                });
+              }catch(e){ console.warn('initBootstrapCollapses: toggle handling failed', e); }
+            });
+          }
+        }catch(e){ console.error('Bootstrap Collapse initialization error', e); }
+      }
+      document.addEventListener('DOMContentLoaded', initBootstrapCollapses);
+      document.addEventListener('turbo:load', initBootstrapCollapses);
+      // Custom, Turbo-safe account menu: uses a single button and moves the
+      // menu into document.body to avoid clipping/overlay issues. Idempotent
+      // and re-bound on turbo:load.
+      function initAccountMenu(){
+        try{
+          const btn = document.getElementById('userMenuToggle');
+          const tpl = document.getElementById('userMenuTemplate');
+          if(!btn || !tpl) { console.debug('initAccountMenu: button or template missing'); return; }
+
+          // Create menu instance from template if needed
+          if(!btn._menu){
+            const clone = tpl.content.firstElementChild.cloneNode(true);
+            // ensure id uniqueness if multiple instances
+            clone.id = 'userMenuCustom';
+            clone.style.display = 'none';
+            document.body.appendChild(clone);
+            btn._menu = clone;
+          }
+
+          const menu = btn._menu;
+
+          const openMenu = () => {
+            menu.style.display = 'block';
+            menu.classList.add('show');
+            menu._open = true;
+            // position menu aligned to button (right-aligned)
+            const rect = btn.getBoundingClientRect();
+            // make visible to measure
+            menu.style.position = 'absolute';
+            const mRect = menu.getBoundingClientRect();
+            const top = rect.bottom + window.scrollY + 6;
+            const left = Math.max(8, rect.right + window.scrollX - mRect.width);
+            menu.style.top = top + 'px';
+            menu.style.left = left + 'px';
+            btn.setAttribute('aria-expanded', 'true');
+          };
+
+          const closeMenu = () => {
+            menu.style.display = 'none';
+            menu.classList.remove('show');
+            menu._open = false;
+            btn.setAttribute('aria-expanded', 'false');
+          };
+
+          const outsideClick = (e) => {
+            if(!menu.contains(e.target) && e.target !== btn) closeMenu();
+          };
+
+          if(!btn._bound){
+            btn.addEventListener('click', (e)=>{
+              e.preventDefault(); e.stopPropagation();
+              try{
+                if(menu._open) closeMenu(); else openMenu();
+              }catch(err){ console.warn('account menu toggle error', err); }
+            });
+            document.addEventListener('click', outsideClick);
+            document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeMenu(); });
+            btn._bound = true;
+            console.debug('initAccountMenu: bound account menu');
+          }
+        }catch(e){ console.error('initAccountMenu error', e); }
+      }
+      document.addEventListener('DOMContentLoaded', initAccountMenu);
+      document.addEventListener('turbo:load', initAccountMenu);
+      // (No custom click binder here — rely on Bootstrap's data-api and the
+      // explicit initBootstrapDropdowns() run on DOMContentLoaded and turbo:load.)
+      // Fix: Some setups emit a link rel="preload" as="style" for application CSS.
+      // Browsers warn if a preloaded stylesheet isn't used quickly. Convert those
+      // preloads into actual stylesheet links so the resource is applied and
+      // the warning disappears. This is safe and idempotent.
+      function fixPreloadedStyles(){
+        try{
+          const preloads = Array.from(document.querySelectorAll('link[rel="preload"][as="style"]'));
+          if(preloads.length === 0) return;
+          preloads.forEach(l => {
+            const href = l.getAttribute('href');
+            try{
+              // If a stylesheet link with the same href already exists, just remove the preload
+              const existing = document.querySelector('link[rel="stylesheet"][href="' + href + '"]');
+              if(existing){
+                // replace rel so browser treats it like a stylesheet (avoid warning)
+                l.rel = 'stylesheet';
+                console.debug('fixPreloadedStyles: converted existing preload to stylesheet for', href);
+              } else {
+                l.rel = 'stylesheet';
+                console.debug('fixPreloadedStyles: converted preload to stylesheet for', href);
+              }
+            }catch(e){ console.warn('fixPreloadedStyles: element change failed', e); }
+          });
+        }catch(e){ console.warn('fixPreloadedStyles error', e); }
+      }
+      document.addEventListener('DOMContentLoaded', fixPreloadedStyles);
+      document.addEventListener('turbo:load', fixPreloadedStyles);
+      
     </script>
   </body>
 </html>

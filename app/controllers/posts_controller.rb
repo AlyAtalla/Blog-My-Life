@@ -10,6 +10,9 @@ class PostsController < ApplicationController
     page = 1 if page < 1
 
     scope = Post.includes(:user, :likes, :comments).order(created_at: :desc)
+    if params[:user_id].present?
+      scope = scope.where(user_id: params[:user_id])
+    end
     @total_count = scope.count
     @per_page = per_page
     @page = page

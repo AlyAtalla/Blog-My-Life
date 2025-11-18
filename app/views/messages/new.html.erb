@@ -1,3 +1,22 @@
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h3>New Message</h3>
+
+    <%= form_with model: @message, url: messages_path, local: true do |f| %>
+      <div class="mb-3">
+        <%= f.label :recipient_id, 'To', class: 'form-label' %>
+        <%= select_tag 'message[recipient_id]', options_from_collection_for_select(User.where.not(id: current_user.id), :id, :name, @recipient&.id), include_blank: 'Select a recipient', class: 'form-select' %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :body, class: 'form-label' %>
+        <%= f.text_area :body, rows: 6, class: 'form-control' %>
+      </div>
+
+      <%= f.submit 'Send Message', class: 'btn btn-primary' %>
+    <% end %>
+  </div>
+</div>
 <% content_for :title, 'New Message' %>
 
 <h2>New message</h2>

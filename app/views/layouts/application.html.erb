@@ -63,6 +63,9 @@
               <% if logged_in? %>
                 <li class="nav-item d-none d-md-block"><span class="nav-link">Signed in as <%= current_user.name %></span></li>
                 <li class="nav-item d-none d-md-block"><%= link_to 'New Post', new_post_path, class: 'nav-link' %></li>
+                <li class="nav-item d-none d-md-block"><%= link_to messages_path, class: 'nav-link' do %>
+                  Messages <% if current_user.unread_messages_count.positive? %><span class="badge bg-light text-primary ms-1"><%= current_user.unread_messages_count %></span><% end %>
+                <% end %></li>
 
                 <!-- Account menu: replaced dual Bootstrap dropdowns with a single custom toggle -->
                 <!-- The button below is a single control (always visible) that opens a custom menu appended to document.body. -->

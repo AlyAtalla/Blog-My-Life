@@ -14,6 +14,10 @@ Rails.application.routes.draw do
 
   resources :contact_messages, only: [:new, :create], path: 'contact'
 
+  # Minimal messaging routes
+  resources :messages, only: [:index, :new, :create, :destroy]
+  get 'messages/conversation/:user_id', to: 'messages#conversation', as: 'conversation_messages'
+
   get '/login', to: 'sessions#new', as: :login
   post '/login', to: 'sessions#create'
   delete '/logout', to: 'sessions#destroy', as: :logout

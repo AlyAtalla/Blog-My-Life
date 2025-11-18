@@ -19,6 +19,9 @@
         <%= link_to 'My Posts', posts_path(user_id: @user.id), class: 'btn btn-outline-secondary' %>
       <% else %>
         <%= link_to 'View posts', posts_path(user_id: @user.id), class: 'btn btn-outline-primary' %>
+        <% if logged_in? %>
+          <%= link_to 'Message', new_message_path(recipient_id: @user.id), class: 'btn btn-primary' %>
+        <% end %>
       <% end %>
     </div>
   </div>

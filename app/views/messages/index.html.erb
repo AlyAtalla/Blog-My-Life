@@ -1,0 +1,24 @@
+<% content_for :title, 'Messages' %>
+
+<h2>Inbox</h2>
+
+<div class="list-group">
+  <% if @messages.any? %>
+    <% @messages.each do |m| %>
+      <%= link_to conversation_messages_path(m.sender_id), class: 'list-group-item list-group-item-action d-flex justify-content-between align-items-start' do %>
+        <div>
+          <strong><%= m.sender.name %></strong>
+          <div class="small text-muted"><%= truncate(m.body, length: 80) %></div>
+        </div>
+        <div class="text-end">
+          <div class="small text-muted"><%= time_ago_in_words(m.created_at) %> ago</div>
+          <% if m.read_at.nil? %>
+            <span class="badge bg-primary">New</span>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div class="alert alert-info">No messages yet.</div>
+  <% end %>
+</div>

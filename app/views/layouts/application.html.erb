@@ -19,7 +19,6 @@
       /* full-page background images */
       body.bg-guest { background-image: url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=2000&q=80'); background-size: cover; background-position: center; background-attachment: fixed; }
       body.bg-logged-in { background-image: url('https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?auto=format&fit=crop&w=2000&q=80'); background-size: cover; background-position: center; background-attachment: fixed; }
-
       /* translucent content area for readability */
       .content-surface { background: rgba(255,255,255,0.92); padding: 1.25rem; border-radius: .5rem; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
       @media (max-width: 768px) { .content-surface { padding: .75rem; } }
@@ -35,8 +34,8 @@
       .gradient-5 { background: linear-gradient(135deg,#A1C4FD 0%,#C2E9FB 100%); }
       .gradient-6 { background: linear-gradient(135deg,#FF9A9E 0%,#FAD0C4 100%); }
 
-      /* entry animation */
-      .post-card { opacity: 0; transform: translateY(18px) scale(0.995); transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1); }
+      /* entry animation: visible by default as a safety fallback when JS doesn't run */
+      .post-card { opacity: 1; transform: none; transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1); }
       .post-card.visible { opacity: 1; transform: translateY(0) scale(1); }
 
       /* pagination style tweak */
@@ -46,6 +45,14 @@
       .dropdown-icon[aria-hidden] { color: inherit; }
       /* ensure dropdown menus appear above page content (prevent being covered) */
       .dropdown-menu { z-index: 2000; }
+      /* Ensure buttons sit above stretched-link overlays so clicks land on them */
+      .card .btn { position: relative; z-index: 3; }
+      /* Ensure comment UI sits above the stretched-link so textareas and buttons are interactive */
+      .post-card .comment-area { position: relative; z-index: 5; }
+      .post-card .comment-form { position: relative; z-index: 6; }
+      .post-card .comment-form textarea, .post-card .comment-form .btn { pointer-events: auto; }
+      /* small overlapping interactor avatar stack */
+      .interactor-avatar { box-shadow: 0 0 0 2px rgba(255,255,255,0.9); border: 2px solid #fff; }
     </style>
   </head>
 
@@ -115,6 +122,68 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script>
+      // AJAX handlers for like/share without redirect
+      function initPostActions(){
+        if(document._postActionsBound) return; document._postActionsBound = true;
+        console.debug('initPostActions: delegated handlers bound');
+
+        // Use event delegation so handlers survive Turbo body replacements
+        document.addEventListener('click', async (e) => {
+          // Like / Unlike
+          const likeBtn = e.target.closest('.like-btn');
+          if(likeBtn){
+            e.preventDefault(); e.stopPropagation();
+            const postId = likeBtn.dataset.postId;
+            const liked = likeBtn.dataset.liked === 'true';
+            const likeId = likeBtn.dataset.likeId;
+            try{
+              if(liked){
+                const url = `/posts/${postId}/likes/${likeId || ''}`;
+                const resp = await fetch(url, { method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } });
+                if(resp.ok){ let json = null; try { json = await resp.json(); } catch(err){ json = null; }
+                  likeBtn.dataset.liked = 'false'; likeBtn.classList.remove('btn-danger'); likeBtn.classList.add('btn-primary'); likeBtn.textContent = 'Like';
+                  const likesEl = document.querySelector(`.likes-count[data-post-id="${postId}"]`);
+                  if(likesEl && json && typeof json.likes_count === 'number'){
+                    likesEl.textContent = json.likes_count + (json.likes_count === 1 ? ' like' : ' likes');
+                  }
+                  if(json && json.recent_actors){ const container = document.querySelector(`.interactors[data-post-id="${postId}"]`); if(container){ container.innerHTML=''; json.recent_actors.forEach((u,i)=>{ const img=document.createElement('img'); img.src=u.avatar_url||'https://placehold.co/40x40/png?text=U'; img.alt=u.name; img.className='interactor-avatar rounded-circle'; img.style.width='28px'; img.style.height='28px'; img.style.objectFit='cover'; img.style.border='2px solid #fff'; img.style.marginLeft=(i===0)?'0':'-8px'; container.appendChild(img); }); } }
+                } else { let text=null; try{text=await resp.text();}catch(err){text=null;} console.warn('unlike failed', resp.status, text); }
+              } else {
+                const resp = await fetch(`/posts/${postId}/likes`, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({}) });
+                if(resp.ok){ let json=null; try{ json = await resp.json(); }catch(err){ json=null; }
+                  likeBtn.dataset.liked='true'; likeBtn.dataset.likeId = json && json.id; likeBtn.classList.remove('btn-primary'); likeBtn.classList.add('btn-danger'); likeBtn.textContent='Unlike';
+                  const likesEl = document.querySelector(`.likes-count[data-post-id="${postId}"]`);
+                  if(likesEl && json && typeof json.likes_count === 'number'){ likesEl.textContent = json.likes_count + (json.likes_count === 1 ? ' like' : ' likes'); }
+                  if(json && json.recent_actors){ const container = document.querySelector(`.interactors[data-post-id="${postId}"]`); if(container){ container.innerHTML=''; json.recent_actors.forEach((u,i)=>{ const img=document.createElement('img'); img.src=u.avatar_url||'https://placehold.co/40x40/png?text=U'; img.alt=u.name; img.className='interactor-avatar rounded-circle'; img.style.width='28px'; img.style.height='28px'; img.style.objectFit='cover'; img.style.border='2px solid #fff'; img.style.marginLeft=(i===0)?'0':'-8px'; container.appendChild(img); }); } }
+                } else { let text=null; try{text=await resp.text();}catch(err){text=null;} console.warn('like create failed', resp.status, text); }
+              }
+            }catch(err){ console.warn('like action failed', err); }
+            return;
+          }
+
+          // Share
+          const shareBtn = e.target.closest('.share-btn');
+          if(shareBtn){ e.preventDefault(); e.stopPropagation(); const url = shareBtn.dataset.postUrl; try{ if(navigator.clipboard) navigator.clipboard.writeText(url).then(()=> alert('Link copied')); }catch(err){ alert('Copy failed'); } return; }
+
+          // Delete
+          const delBtn = e.target.closest('.delete-btn');
+          if(delBtn){ e.preventDefault(); e.stopPropagation(); if(!confirm('Delete this post?')) return; const url = delBtn.dataset.deleteUrl; try{ const resp = await fetch(url, { method: 'DELETE', headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content } }); if(resp.ok){ const col = delBtn.closest('.col-md-4'); if(col) col.remove(); } else { alert('Delete failed'); } }catch(err){ console.warn('delete failed', err); } return; }
+
+          // Comment toggle
+          const toggleBtn = e.target.closest('.comment-toggle');
+          if(toggleBtn){ e.preventDefault(); e.stopPropagation(); const container = toggleBtn.closest('.comment-area'); const form = container.querySelector('.comment-form'); form.style.display = (form.style.display === 'none' || !form.style.display) ? 'block' : 'none'; return; }
+
+          // Cancel comment
+          const cancelBtn = e.target.closest('.cancel-comment');
+          if(cancelBtn){ e.preventDefault(); e.stopPropagation(); const form = cancelBtn.closest('.comment-form'); if(form) form.style.display='none'; return; }
+
+          // Submit comment
+          const submitBtn = e.target.closest('.submit-comment');
+          if(submitBtn){ e.preventDefault(); e.stopPropagation(); const postId = submitBtn.dataset.postId; const form = submitBtn.closest('.comment-form'); const textarea = form.querySelector('.comment-body'); const body = textarea.value.trim(); if(!body) return alert('Enter a comment'); try{ const resp = await fetch(`/posts/${postId}/comments`, { method: 'POST', headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ comment: { body } }) }); if(resp.ok){ const json = await resp.json().catch(()=>null); textarea.value=''; form.style.display='none'; const commentsEl = document.querySelector(`.comments-count[data-post-id="${postId}"]`); if(commentsEl && json && json.comments_count !== undefined){ commentsEl.textContent = json.comments_count + (json.comments_count === 1 ? ' comment' : ' comments'); } if(json && json.recent_actors){ const container = document.querySelector(`.interactors[data-post-id="${postId}"]`); if(container){ container.innerHTML=''; json.recent_actors.forEach((u,i)=>{ const img=document.createElement('img'); img.src=u.avatar_url||'https://placehold.co/40x40/png?text=U'; img.alt=u.name; img.className='interactor-avatar rounded-circle'; img.style.width='28px'; img.style.height='28px'; img.style.objectFit='cover'; img.style.border='2px solid #fff'; img.style.marginLeft=(i===0)?'0':'-8px'; container.appendChild(img); }); } } alert('Comment posted'); } else { alert('Could not post comment'); } }catch(err){ console.warn('comment failed', err); } return; }
+        });
+      }
+      document.addEventListener('DOMContentLoaded', initPostActions);
+      document.addEventListener('turbo:load', initPostActions);
       function copyToClipboard(text) {
         if (navigator.clipboard && window.isSecureContext) {
           navigator.clipboard.writeText(text).then(()=>{ alert('Link copied to clipboard') });

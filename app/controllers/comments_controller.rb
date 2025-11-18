@@ -7,9 +7,24 @@ class CommentsController < ApplicationController
 		@comment = @post.comments.build(comment_params)
 		@comment.user = current_user
 		if @comment.save
-			redirect_to @post, notice: 'Comment posted.'
+			respond_to do |format|
+				format.html { redirect_to @post, notice: 'Comment posted.' }
+				format.json {
+					render json: {
+						id: @comment.id,
+						body: @comment.body,
+						user: { id: @comment.user.id, name: @comment.user.name, avatar_url: @comment.user.avatar_url },
+						created_at: @comment.created_at,
+						comments_count: @post.comments.count,
+						recent_actors: @post.recent_interactors(4).map { |u| { id: u.id, name: u.name, avatar_url: u.avatar_url } }
+					}, status: :created
+				}
+			end
 		else
-			redirect_to @post, alert: 'Could not post comment.'
+			respond_to do |format|
+				format.html { redirect_to @post, alert: 'Could not post comment.' }
+				format.json { render json: { error: 'Could not post comment' }, status: :unprocessable_entity }
+			end
 		end
 	end
 

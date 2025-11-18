@@ -43,21 +43,46 @@
               <p class="card-text"> <%= truncate(post.body, length: 120) %> </p>
               <div class="mt-auto d-flex justify-content-between align-items-center">
                 <div>
-                  <small class="text-muted"><%= pluralize(post.likes_count, 'like') %> • <%= pluralize(post.comments.count, 'comment') %></small>
+                  <small class="text-muted">
+                    <span class="likes-count" data-post-id="<%= post.id %>"><%= pluralize(post.likes_count, 'like') %></span>
+                    •
+                    <span class="comments-count" data-post-id="<%= post.id %>"><%= pluralize(post.comments.count, 'comment') %></span>
+                  </small>
+                  <div class="interactors d-flex align-items-center mt-2" data-post-id="<%= post.id %>">
+                    <% post.recent_interactors(4).each_with_index do |u, i| %>
+                      <%= image_tag(u.avatar_url || 'https://placehold.co/40x40/png?text=U', alt: u.name, class: 'interactor-avatar rounded-circle', style: "width:28px;height:28px;object-fit:cover;border:2px solid #fff;margin-left:#{i==0 ? '0' : '-8px'};") %>
+                    <% end %>
+                  </div>
                 </div>
                 <div>
                   <%= link_to 'View', post_path(post), class: 'btn btn-sm btn-outline-primary me-2' %>
-                  <button class="btn btn-sm btn-outline-secondary me-2" onclick="copyToClipboard('<%= request.base_url + post_path(post) %>')">Copy</button>
+                  <button type="button" class="btn btn-sm btn-secondary me-2 share-btn" data-post-url="<%= request.base_url + post_path(post) %>">Share</button>
                   <% like = post.likes.find { |l| l.user_id == current_user.id } %>
                   <% if like %>
-                    <%= button_to 'Unlike', post_like_path(post, like), method: :delete, class: 'btn btn-sm btn-danger' %>
+                    <button type="button" class="btn btn-sm btn-danger like-btn" data-post-id="<%= post.id %>" data-like-id="<%= like.id %>" data-liked="true">Unlike</button>
                   <% else %>
-                    <%= button_to 'Like', post_likes_path(post), method: :post, class: 'btn btn-sm btn-primary' %>
+                    <button type="button" class="btn btn-sm btn-primary like-btn" data-post-id="<%= post.id %>" data-liked="false">Like</button>
                   <% end %>
                 </div>
               </div>
             </div>
-          </div>
+            <div class="comment-area mt-2">
+              <button type="button" class="btn btn-sm btn-info comment-toggle" data-post-id="<%= post.id %>">Comment</button>
+              <div class="comment-form mt-2" style="display:none;">
+                <textarea class="form-control comment-body" rows="3" placeholder="Write a comment..."></textarea>
+                <div class="d-flex gap-2 mt-2">
+                  <button class="btn btn-sm btn-primary submit-comment" data-post-id="<%= post.id %>">Post</button>
+                  <button class="btn btn-sm btn-secondary cancel-comment">Cancel</button>
+                </div>
+              </div>
+              <% if current_user == post.user %>
+                <div class="mt-2">
+                  <%= link_to 'Edit', edit_post_path(post), class: 'btn btn-sm btn-warning me-2' %>
+                  <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-post-id="<%= post.id %>" data-delete-url="<%= post_path(post) %>">Delete</button>
+                </div>
+              <% end %>
+            </div>
+        </div>
         </div>
         <% end %>
       <% else %>

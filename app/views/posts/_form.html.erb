@@ -1,4 +1,4 @@
-<%= form_with model: post, local: true do |f| %>
+<%= form_with model: post, local: true, html: { multipart: true } do |f| %>
   <div class="mb-3">
     <%= f.label :title, class: 'form-label' %>
     <%= f.text_field :title, class: 'form-control' %>
@@ -12,6 +12,16 @@
   <div class="mb-3">
     <%= f.label :image_url, 'Image URL (optional)', class: 'form-label' %>
     <%= f.text_field :image_url, class: 'form-control', placeholder: 'https://example.com/image.jpg' %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :image, 'Upload image (optional)', class: 'form-label' %>
+    <%= file_field_tag 'post[image]', accept: 'image/*', class: 'form-control' %>
+    <% if post.image_url.present? %>
+      <div class="mt-2">
+        <%= image_tag post.image_url, alt: post.title, style: 'max-width:240px;max-height:160px;object-fit:cover;border-radius:6px;' %>
+      </div>
+    <% end %>
   </div>
 
   <%= f.submit class: 'btn btn-primary' %>

@@ -1,3 +1,5 @@
+require 'fileutils'
+
 class PostsController < ApplicationController
   before_action :set_post, only: %i[ show edit update destroy toggle_visibility ]
   before_action :require_login, except: %i[index show]
@@ -53,10 +55,20 @@ class PostsController < ApplicationController
 
   # POST /posts or /posts.json
   def create
+    uploaded = params.dig(:post, :image)
     @post = current_user.posts.build(post_params)
 
     respond_to do |format|
       if @post.save
+        if uploaded
+          dir = Rails.root.join('public', 'uploads', 'posts')
+          FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+          filename = "post_#{@post.id}_#{Time.now.to_i}#{File.extname(uploaded.original_filename)}"
+          path = dir.join(filename)
+          File.open(path, 'wb') { |f| f.write(uploaded.read) }
+          @post.update(image_url: "/uploads/posts/#{filename}")
+        end
+
         format.html { redirect_to @post, notice: "Post was successfully created." }
         format.json { render :show, status: :created, location: @post }
       else
@@ -68,8 +80,19 @@ class PostsController < ApplicationController
 
   # PATCH/PUT /posts/1 or /posts/1.json
   def update
+    uploaded = params.dig(:post, :image)
+
     respond_to do |format|
       if @post.update(post_params)
+        if uploaded
+          dir = Rails.root.join('public', 'uploads', 'posts')
+          FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+          filename = "post_#{@post.id}_#{Time.now.to_i}#{File.extname(uploaded.original_filename)}"
+          path = dir.join(filename)
+          File.open(path, 'wb') { |f| f.write(uploaded.read) }
+          @post.update(image_url: "/uploads/posts/#{filename}")
+        end
+
         format.html { redirect_to @post, notice: "Post was successfully updated.", status: :see_other }
         format.json { render :show, status: :ok, location: @post }
       else

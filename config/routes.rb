@@ -4,6 +4,9 @@ Rails.application.routes.draw do
   get "sessions/destroy"
   resources :users, only: [:new, :create, :show]
   resources :posts do
+    member do
+      patch :toggle_visibility
+    end
     resources :comments, only: [:create, :destroy]
     resources :likes, only: [:create, :destroy]
   end

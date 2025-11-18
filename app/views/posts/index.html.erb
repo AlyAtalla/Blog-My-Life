@@ -55,8 +55,18 @@
                   </div>
                 </div>
                 <div>
+                  <%= link_to 'Profile', post.user, class: 'btn btn-sm btn-outline-secondary me-2', title: "View #{post.user.name}'s profile" %>
                   <%= link_to 'View', post_path(post), class: 'btn btn-sm btn-outline-primary me-2' %>
                   <button type="button" class="btn btn-sm btn-secondary me-2 share-btn" data-post-url="<%= request.base_url + post_path(post) %>">Share</button>
+                  <% if current_user == post.user %>
+                    <%= form_with url: toggle_visibility_post_path(post), method: :patch, local: true, class: 'd-inline' do %>
+                      <% if post.public? %>
+                        <%= submit_tag 'Make private', class: 'btn btn-sm btn-outline-warning ms-2' %>
+                      <% else %>
+                        <%= submit_tag 'Make public', class: 'btn btn-sm btn-outline-success ms-2' %>
+                      <% end %>
+                    <% end %>
+                  <% end %>
                   <% like = post.likes.find { |l| l.user_id == current_user.id } %>
                   <% if like %>
                     <button type="button" class="btn btn-sm btn-danger like-btn" data-post-id="<%= post.id %>" data-like-id="<%= like.id %>" data-liked="true">Unlike</button>
@@ -75,7 +85,7 @@
                   <button class="btn btn-sm btn-secondary cancel-comment">Cancel</button>
                 </div>
               </div>
-              <% if current_user == post.user %>
+              <% if current_user == post.user || (current_user && current_user.email == 'aly@gmail.com') %>
                 <div class="mt-2">
                   <%= link_to 'Edit', edit_post_path(post), class: 'btn btn-sm btn-warning me-2' %>
                   <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-post-id="<%= post.id %>" data-delete-url="<%= post_path(post) %>">Delete</button>

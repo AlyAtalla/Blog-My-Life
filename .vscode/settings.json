@@ -1,0 +1,4 @@
+{
+  // Disable audio cues (notification sounds) for this workspace
+  "audioCues.enabled": "off"
+}

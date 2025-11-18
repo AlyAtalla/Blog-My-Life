@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_18_150000) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_18_190000) do
   create_table "comments", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -55,6 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_18_150000) do
     t.text "body"
     t.datetime "created_at", null: false
     t.string "image_url"
+    t.boolean "public", default: true, null: false
     t.string "title"
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
@@ -66,6 +67,8 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_18_150000) do
     t.text "bio"
     t.datetime "created_at", null: false
     t.string "email"
+    t.text "hobbies"
+    t.text "interests"
     t.string "name"
     t.string "password_digest"
     t.datetime "updated_at", null: false

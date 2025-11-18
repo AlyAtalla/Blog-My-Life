@@ -35,7 +35,17 @@
 
       <div class="mb-3">
         <%= f.label :bio, class: 'form-label' %>
-        <%= f.text_area :bio, class: 'form-control', rows: 4 %>
+        <%= f.text_area :bio, class: 'form-control', rows: 6, placeholder: 'Tell people about yourself — background, profession, etc.' %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :interests, 'Interests (comma-separated)', class: 'form-label' %>
+        <%= f.text_area :interests, class: 'form-control', rows: 4, placeholder: 'e.g. Photography, AI, Cooking, Travel' %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :hobbies, 'Hobbies', class: 'form-label' %>
+        <%= f.text_area :hobbies, class: 'form-control', rows: 4, placeholder: 'e.g. Guitar, Hiking, Gardening' %>
       </div>
 
       <div class="d-flex gap-2">

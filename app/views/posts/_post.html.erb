@@ -11,7 +11,8 @@
 
   <div>
     <strong>User:</strong>
-    <%= post.user_id %>
+    <%= link_to post.user.name, post.user %>
+    <%= link_to 'Profile', post.user, class: 'btn btn-sm btn-outline-secondary ms-2' %>
   </div>
 
 </div>

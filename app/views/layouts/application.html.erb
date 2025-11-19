@@ -27,6 +27,8 @@
       .post-card .card-body { background: rgba(255,255,255,0.88); }
       /* ensure card images have consistent size and cover */
       .card-img-top { width: 100%; height: 200px; object-fit: cover; display: block; }
+      /* make all images responsive by default */
+      img { max-width: 100%; height: auto; }
       .gradient-1 { background: linear-gradient(135deg,#FFDEE9 0%,#B5FFFC 100%); }
       .gradient-2 { background: linear-gradient(135deg,#E0C3FC 0%,#8EC5FC 100%); }
       .gradient-3 { background: linear-gradient(135deg,#F9D29D 0%,#F78FA7 100%); }
@@ -53,6 +55,32 @@
       .post-card .comment-form textarea, .post-card .comment-form .btn { pointer-events: auto; }
       /* small overlapping interactor avatar stack */
       .interactor-avatar { box-shadow: 0 0 0 2px rgba(255,255,255,0.9); border: 2px solid #fff; }
+
+      /* Responsive tweaks for small screens */
+      @media (max-width: 992px) {
+        .card-img-top { height: 160px; }
+        .post-card .card-body { padding: 1rem; }
+        .interactor-avatar { width: 24px !important; height: 24px !important; }
+      }
+
+      @media (max-width: 768px) {
+        /* avoid fixed background on small devices (performance and readability) */
+        body.bg-guest, body.bg-logged-in { background-attachment: scroll; background-position: center; }
+        .card-img-top { height: 120px; }
+        .content-surface { padding: .6rem; }
+        .post-card .comment-area { padding: .5rem; }
+        .post-card .comment-form { position: static; z-index: auto; }
+        .interactor-avatar { width: 20px !important; height: 20px !important; margin-left: -6px !important; }
+        .post-card .card-body { background: rgba(255,255,255,0.96); }
+        #conversation { max-height: 50vh; }
+      }
+
+      @media (max-width: 480px) {
+        .card-img-top { height: 100px; }
+        .post-card { margin-bottom: 1rem; }
+        .post-card .card-body { padding: .75rem; }
+        .interactor-avatar { width: 18px !important; height: 18px !important; margin-left: -6px !important; }
+      }
     </style>
   </head>
 
@@ -376,6 +404,57 @@
       document.addEventListener('DOMContentLoaded', fixPreloadedStyles);
       document.addEventListener('turbo:load', fixPreloadedStyles);
       
+    </script>
+    <!-- EmailJS integration: client-side mail send + optional server persistence -->
+    <script src="https://cdn.emailjs.com/sdk/3.2.0/email.min.js"></script>
+    <script>
+      // EmailJS initialization now reads public keys from the form dataset.
+      // The contact form includes data-emailjs-service and data-emailjs-template
+      // and optionally data-emailjs-user (public key).
+      document.addEventListener('DOMContentLoaded', function(){
+        const form = document.getElementById('contact-form');
+        if(!form) return;
+
+        const EMAILJS_SERVICE = form.dataset.emailjsService || 'service_0og5zvn';
+        const EMAILJS_TEMPLATE = form.dataset.emailjsTemplate || 'YOUR_TEMPLATE_ID';
+        const EMAILJS_PUBLIC_ID = form.dataset.emailjsPublicId || 'YOUR_EMAILJS_PUBLIC_KEY';
+
+        // Initialize EmailJS if a non-placeholder public id is provided
+        try{ if(window.emailjs && EMAILJS_PUBLIC_ID && EMAILJS_PUBLIC_ID !== 'YOUR_EMAILJS_PUBLIC_KEY') emailjs.init(EMAILJS_PUBLIC_ID); }catch(e){ console.warn('emailjs.init failed', e); }
+
+        form.addEventListener('submit', async function(e){
+          // If user hasn't configured EmailJS client-side keys, let the form submit normally
+          const userSet = EMAILJS_PUBLIC_ID && EMAILJS_PUBLIC_ID !== 'YOUR_EMAILJS_PUBLIC_KEY';
+          const templateSet = EMAILJS_TEMPLATE && EMAILJS_TEMPLATE !== 'YOUR_TEMPLATE_ID';
+          if(!userSet || !templateSet){
+            return; // normal submit
+          }
+
+          e.preventDefault();
+          const submitBtn = form.querySelector('[type="submit"]');
+          if(submitBtn) submitBtn.disabled = true;
+
+          try{
+            // Send via EmailJS (client-side)
+            await emailjs.sendForm(EMAILJS_SERVICE, EMAILJS_TEMPLATE, '#contact-form');
+
+            // Persist server-side copy to ContactMessage#create
+            const formData = new FormData(form);
+            const token = document.querySelector('meta[name="csrf-token"]').content;
+            await fetch(form.action, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRF-Token': token } });
+
+            alert('Message sent — thank you!');
+            form.reset();
+          }catch(err){
+            console.error('EmailJS send error', err);
+            if(confirm('Sending failed via EmailJS. Submit via server instead?')){
+              form.submit();
+            }
+          }finally{
+            if(submitBtn) submitBtn.disabled = false;
+          }
+        });
+      });
     </script>
   </body>
 </html>

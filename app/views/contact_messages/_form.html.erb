@@ -1,7 +1,7 @@
 <div class="card mt-4">
   <div class="card-body">
-    <h4>Contact Me</h4>
-    <%= form_with model: @contact_message || ContactMessage.new, url: contact_messages_path, local: true do |f| %>
+    <h4>Contact Us</h4>
+    <%= form_with model: @contact_message || ContactMessage.new, url: contact_messages_path, local: true, html: { id: 'contact-form', data: { emailjs_service: 'service_0og5zvn', emailjs_template: 'YOUR_TEMPLATE_ID', emailjs_public_id: 'YOUR_EMAILJS_PUBLIC_KEY' } } do |f| %>
       <% if ( @contact_message && @contact_message.errors.any? ) %>
         <div class="alert alert-danger">
           <ul>

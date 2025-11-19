@@ -1,4 +1,4 @@
-require 'fileutils'
+require "fileutils"
 
 class PostsController < ApplicationController
   before_action :set_post, only: %i[ show edit update destroy toggle_visibility ]
@@ -16,13 +16,13 @@ class PostsController < ApplicationController
     if params[:user_id].present?
       scope = scope.where(user_id: params[:user_id])
       # when viewing a specific user's posts, only show private posts to the owner or super-user
-      unless current_user && (current_user.id == params[:user_id].to_i || current_user.email == 'aly@gmail.com')
+      unless current_user && (current_user.id == params[:user_id].to_i || current_user.email == "aly@gmail.com")
         scope = scope.where(public: true)
       end
     else
       # general feed: show public posts, plus the current user's own posts
       if current_user
-        scope = scope.where('posts.public = ? OR posts.user_id = ?', true, current_user.id)
+        scope = scope.where("posts.public = ? OR posts.user_id = ?", true, current_user.id)
       else
         scope = scope.where(public: true)
       end
@@ -39,8 +39,8 @@ class PostsController < ApplicationController
   def show
     @comment = Comment.new
     # prevent non-authorized viewing of private posts
-    unless @post.public? || (current_user && (current_user == @post.user || current_user.email == 'aly@gmail.com'))
-      redirect_to posts_path, alert: 'This post is private.' and return
+    unless @post.public? || (current_user && (current_user == @post.user || current_user.email == "aly@gmail.com"))
+      redirect_to posts_path, alert: "This post is private." and return
     end
   end
 
@@ -61,11 +61,11 @@ class PostsController < ApplicationController
     respond_to do |format|
       if @post.save
         if uploaded
-          dir = Rails.root.join('public', 'uploads', 'posts')
+          dir = Rails.root.join("public", "uploads", "posts")
           FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
           filename = "post_#{@post.id}_#{Time.now.to_i}#{File.extname(uploaded.original_filename)}"
           path = dir.join(filename)
-          File.open(path, 'wb') { |f| f.write(uploaded.read) }
+          File.open(path, "wb") { |f| f.write(uploaded.read) }
           @post.update(image_url: "/uploads/posts/#{filename}")
         end
 
@@ -85,11 +85,11 @@ class PostsController < ApplicationController
     respond_to do |format|
       if @post.update(post_params)
         if uploaded
-          dir = Rails.root.join('public', 'uploads', 'posts')
+          dir = Rails.root.join("public", "uploads", "posts")
           FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
           filename = "post_#{@post.id}_#{Time.now.to_i}#{File.extname(uploaded.original_filename)}"
           path = dir.join(filename)
-          File.open(path, 'wb') { |f| f.write(uploaded.read) }
+          File.open(path, "wb") { |f| f.write(uploaded.read) }
           @post.update(image_url: "/uploads/posts/#{filename}")
         end
 
@@ -105,7 +105,7 @@ class PostsController < ApplicationController
   # PATCH /posts/:id/toggle_visibility
   def toggle_visibility
     unless current_user && current_user == @post.user
-      redirect_to @post, alert: 'Only the post owner can change visibility.' and return
+      redirect_to @post, alert: "Only the post owner can change visibility." and return
     end
 
     @post.update(public: !@post.public?)
@@ -138,9 +138,9 @@ class PostsController < ApplicationController
 
     def authorize_user!
       # allow the site super-user (aly@gmail.com) to edit/delete any post
-      return if current_user && current_user.email == 'aly@gmail.com'
+      return if current_user && current_user.email == "aly@gmail.com"
       unless @post.user == current_user
-        redirect_to @post, alert: 'You are not authorized to edit this post.'
+        redirect_to @post, alert: "You are not authorized to edit this post."
       end
     end
 end

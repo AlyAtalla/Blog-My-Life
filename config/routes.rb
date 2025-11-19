@@ -2,28 +2,28 @@ Rails.application.routes.draw do
   get "sessions/new"
   get "sessions/create"
   get "sessions/destroy"
-  resources :users, only: [:new, :create, :show]
+  resources :users, only: [ :new, :create, :show ]
   resources :posts do
     member do
       patch :toggle_visibility
     end
-    resources :comments, only: [:create, :destroy]
-    resources :likes, only: [:create, :destroy]
+    resources :comments, only: [ :create, :destroy ]
+    resources :likes, only: [ :create, :destroy ]
   end
 
   # Profile routes for current user
-  get '/profile', to: 'users#edit', as: :profile
-  patch '/profile', to: 'users#update'
+  get "/profile", to: "users#edit", as: :profile
+  patch "/profile", to: "users#update"
 
-  resources :contact_messages, only: [:new, :create], path: 'contact'
+  resources :contact_messages, only: [ :new, :create ], path: "contact"
 
   # Minimal messaging routes
-  resources :messages, only: [:index, :new, :create, :destroy]
-  get 'messages/conversation/:user_id', to: 'messages#conversation', as: 'conversation_messages'
+  resources :messages, only: [ :index, :new, :create, :destroy ]
+  get "messages/conversation/:user_id", to: "messages#conversation", as: "conversation_messages"
 
-  get '/login', to: 'sessions#new', as: :login
-  post '/login', to: 'sessions#create'
-  delete '/logout', to: 'sessions#destroy', as: :logout
+  get "/login", to: "sessions#new", as: :login
+  post "/login", to: "sessions#create"
+  delete "/logout", to: "sessions#destroy", as: :logout
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

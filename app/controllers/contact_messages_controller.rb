@@ -13,7 +13,7 @@ class ContactMessagesController < ApplicationController
         Rails.logger.error "ContactMailer error: #{e.message}"
       end
 
-      redirect_to root_path, notice: 'Thanks — your message has been sent.'
+      redirect_to root_path, notice: "Thanks — your message has been sent."
     else
       render :new, status: :unprocessable_entity
     end

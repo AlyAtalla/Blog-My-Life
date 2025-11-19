@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: Blog-My-Life-Web
+    env: ruby
+    region: oregon
+    branch: main
+    plan: starter
+    buildCommand: |
+      bundle install --jobs 4 --retry 3
+      bundle exec rails assets:precompile
+    startCommand: bundle exec puma -C config/puma.rb
+    disk: 1024
+    healthCheckPath: /health || /
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+
+databases:
+  - name: blog-my-life-db
+    engine: postgres
+    version: "15"
+    plan: starter
+
+# Notes:
+# - This manifest provisions a web service and a managed Postgres database on Render.
+# - Fill sensitive values in the Render dashboard (RAILS_MASTER_KEY, SECRET_KEY_BASE,
+#   SMTP_* and any API keys) rather than committing them here.
+# - After the first deploy, set the web service Post-Deploy Command to:
+#     bundle exec rails db:migrate
+#   so migrations run automatically after successful deploys.
+# - For file uploads in production, prefer ActiveStorage with S3. The current app stores
+#   uploads under `public/uploads` which is ephemeral on many platforms; configure a
+#   persistent store or S3 before relying on uploaded files.

@@ -1,0 +1,57 @@
+<div class="row justify-content-center mt-5">
+  <div class="col-md-8">
+    <h2>My Profile</h2>
+
+    <%= form_with model: @user, url: profile_path, local: true, method: :patch, html: { multipart: true } do |f| %>
+      <% if @user.errors.any? %>
+        <div class="alert alert-danger">
+          <ul>
+            <% @user.errors.full_messages.each do |m| %>
+              <li><%= m %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="mb-3 d-flex align-items-center">
+        <% if @user.avatar_url.present? %>
+          <img src="<%= @user.avatar_url %>" alt="avatar" style="width:96px;height:96px;object-fit:cover;border-radius:50%;margin-right:1rem;" />
+        <% end %>
+        <div>
+          <%= f.label :avatar, 'Upload avatar', class: 'form-label' %>
+          <%= file_field_tag 'user[avatar]', accept: 'image/*', class: 'form-control' %>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :name, class: 'form-label' %>
+        <%= f.text_field :name, class: 'form-control' %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :email, class: 'form-label' %>
+        <%= f.email_field :email, class: 'form-control' %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :bio, class: 'form-label' %>
+        <%= f.text_area :bio, class: 'form-control', rows: 6, placeholder: 'Tell people about yourself — background, profession, etc.' %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :interests, 'Interests (comma-separated)', class: 'form-label' %>
+        <%= f.text_area :interests, class: 'form-control', rows: 4, placeholder: 'e.g. Photography, AI, Cooking, Travel' %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :hobbies, 'Hobbies', class: 'form-label' %>
+        <%= f.text_area :hobbies, class: 'form-control', rows: 4, placeholder: 'e.g. Guitar, Hiking, Gardening' %>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= f.submit 'Save profile', class: 'btn btn-primary' %>
+        <%= link_to 'My Posts', posts_path(user_id: @user.id), class: 'btn btn-outline-secondary' %>
+      </div>
+    <% end %>
+  </div>
+</div>

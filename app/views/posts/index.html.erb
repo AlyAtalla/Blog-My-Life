@@ -1,0 +1,121 @@
+<div class="mb-4">
+  <% if logged_in? %>
+    <div class="p-5 text-white rounded" style="background-image: url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1650&q=80'); background-size: cover; background-position: center;">
+      <div class="container">
+        <h1 class="display-5">Welcome, <%= current_user.name %>!</h1>
+        <p class="lead">Enjoy the latest posts — like, comment, and share your thoughts.</p>
+      </div>
+    </div>
+  <% else %>
+    <div class="p-5 text-center text-white rounded mb-3" style="background-image: url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1650&q=80'); background-size: cover; background-position: center;">
+      <div class="container">
+        <h1 class="display-5">Welcome to Blog My Life</h1>
+        <p class="lead">Sign up or login to interact with posts.</p>
+      </div>
+    </div>
+  <% end %>
+  <% if logged_in? %>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2>All posts</h2>
+      <%= link_to 'New Post', new_post_path, class: 'btn btn-success' %>
+    </div>
+    <div class="mb-3">
+      <small class="text-muted">Showing page <%= @page %> of <%= @total_pages %> — total posts: <%= @total_count %></small>
+    </div>
+
+    <div class="row">
+      <% if @posts.any? %>
+        <% @posts.each do |post| %>
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm post-card <%= cycle('gradient-1','gradient-2','gradient-3','gradient-4','gradient-5','gradient-6') %>">
+            <% if post.image_url.present? %>
+              <%= link_to post_path(post) do %>
+                <%= image_tag post.image_url,
+                      class: 'card-img-top',
+                      alt: post.title,
+                      loading: 'lazy',
+                      onerror: "this.onerror=null;this.src='https://placehold.co/1200x700/png?text=No+Image';" %>
+              <% end %>
+            <% end %>
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title"><%= link_to post.title, post, class: 'stretched-link text-decoration-none' %></h5>
+              <p class="text-muted small">By <%= link_to post.user.name, post.user %> • <%= time_ago_in_words(post.created_at) %> ago</p>
+              <p class="card-text"> <%= truncate(post.body, length: 120) %> </p>
+              <div class="mt-auto d-flex justify-content-between align-items-center">
+                <div>
+                  <small class="text-muted">
+                    <span class="likes-count" data-post-id="<%= post.id %>"><%= pluralize(post.likes_count, 'like') %></span>
+                    •
+                    <span class="comments-count" data-post-id="<%= post.id %>"><%= pluralize(post.comments.count, 'comment') %></span>
+                  </small>
+                  <div class="interactors d-flex align-items-center mt-2" data-post-id="<%= post.id %>">
+                    <% post.recent_interactors(4).each_with_index do |u, i| %>
+                      <%= image_tag(u.avatar_url || 'https://placehold.co/40x40/png?text=U', alt: u.name, class: 'interactor-avatar rounded-circle', style: "width:28px;height:28px;object-fit:cover;border:2px solid #fff;margin-left:#{i==0 ? '0' : '-8px'};") %>
+                    <% end %>
+                  </div>
+                </div>
+                <div>
+                  <%= link_to 'Profile', post.user, class: 'btn btn-sm btn-outline-secondary me-2', title: "View #{post.user.name}'s profile" %>
+                  <%= link_to 'View', post_path(post), class: 'btn btn-sm btn-outline-primary me-2' %>
+                  <button type="button" class="btn btn-sm btn-secondary me-2 share-btn" data-post-url="<%= request.base_url + post_path(post) %>">Share</button>
+                  <% if current_user == post.user %>
+                    <%= form_with url: toggle_visibility_post_path(post), method: :patch, local: true, class: 'd-inline' do %>
+                      <% if post.public? %>
+                        <%= submit_tag 'Make private', class: 'btn btn-sm btn-outline-warning ms-2' %>
+                      <% else %>
+                        <%= submit_tag 'Make public', class: 'btn btn-sm btn-outline-success ms-2' %>
+                      <% end %>
+                    <% end %>
+                  <% end %>
+                  <% like = post.likes.find { |l| l.user_id == current_user.id } %>
+                  <% if like %>
+                    <button type="button" class="btn btn-sm btn-danger like-btn" data-post-id="<%= post.id %>" data-like-id="<%= like.id %>" data-liked="true">Unlike</button>
+                  <% else %>
+                    <button type="button" class="btn btn-sm btn-primary like-btn" data-post-id="<%= post.id %>" data-liked="false">Like</button>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+            <div class="comment-area mt-2">
+              <button type="button" class="btn btn-sm btn-info comment-toggle" data-post-id="<%= post.id %>">Comment</button>
+              <div class="comment-form mt-2" style="display:none;">
+                <textarea class="form-control comment-body" rows="3" placeholder="Write a comment..."></textarea>
+                <div class="d-flex gap-2 mt-2">
+                  <button class="btn btn-sm btn-primary submit-comment" data-post-id="<%= post.id %>">Post</button>
+                  <button class="btn btn-sm btn-secondary cancel-comment">Cancel</button>
+                </div>
+              </div>
+              <% if current_user == post.user || (current_user && current_user.email == 'aly@gmail.com') %>
+                <div class="mt-2">
+                  <%= link_to 'Edit', edit_post_path(post), class: 'btn btn-sm btn-warning me-2' %>
+                  <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-post-id="<%= post.id %>" data-delete-url="<%= post_path(post) %>">Delete</button>
+                </div>
+              <% end %>
+            </div>
+        </div>
+        </div>
+        <% end %>
+      <% else %>
+        <div class="col-12">
+          <div class="alert alert-info">No posts on this page. <%= link_to 'Go to first page', posts_path(page: 1), class: 'btn btn-sm btn-outline-primary ms-2' %> <%# or run seeds to create demo posts %></div>
+        </div>
+      <% end %>
+    </div>
+    
+    <% if @total_pages > 1 %>
+      <nav aria-label="Posts pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+          <% 1.upto(@total_pages) do |p| %>
+            <li class="page-item <%= 'active' if p == @page %>">
+              <%= link_to p, posts_path(page: p), class: 'page-link' %>
+            </li>
+          <% end %>
+        </ul>
+      </nav>
+    <% end %>
+
+    <div class="mt-4">
+      <%= render 'contact_messages/form' if logged_in? %>
+    </div>
+  <% end %>
+</div>

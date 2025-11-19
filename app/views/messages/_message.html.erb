@@ -1,0 +1,8 @@
+<div class="d-flex mb-2 <%= message.sender == current_user ? 'justify-content-end' : 'justify-content-start' %>">
+  <div class="card <%= message.sender == current_user ? 'bg-primary text-white' : '' %>" style="max-width:75%;">
+    <div class="card-body p-2">
+      <div class="small text-muted mb-1"><strong><%= link_to message.sender.name, message.sender %></strong> • <%= message.created_at.strftime('%b %-d %H:%M') %></div>
+      <div><%= simple_format(message.body) %></div>
+    </div>
+  </div>
+</div>

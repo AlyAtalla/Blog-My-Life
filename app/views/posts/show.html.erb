@@ -1,0 +1,90 @@
+<div class="card mb-4">
+  <div class="card-body">
+    <h2 class="card-title"><%= @post.title %></h2>
+    <p class="text-muted">By <%= link_to @post.user.name, @post.user %> • <%= @post.created_at.strftime('%b %-d, %Y') %>
+      <%= link_to 'View profile', @post.user, class: 'btn btn-sm btn-outline-secondary ms-2', style: 'vertical-align: middle;' %>
+      <% if logged_in? && current_user == @post.user %>
+        <%= form_with url: toggle_visibility_post_path(@post), method: :patch, local: true, class: 'd-inline ms-2' do %>
+          <% if @post.public? %>
+            <%= submit_tag 'Make private', class: 'btn btn-sm btn-outline-warning' %>
+          <% else %>
+            <%= submit_tag 'Make public', class: 'btn btn-sm btn-outline-success' %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </p>
+    <div class="mt-3"><%= simple_format(@post.body) %></div>
+    <% if @post.image_url.present? %>
+      <div class="mt-3">
+        <%= image_tag @post.image_url, class: 'img-fluid rounded mb-3', alt: @post.title, onerror: "this.onerror=null;this.src='https://placehold.co/1200x700/png?text=No+Image';" %>
+      </div>
+    <% end %>
+
+    <div class="mt-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <% if logged_in? %>
+            <% like = @post.likes.find { |l| l.user_id == current_user.id } %>
+            <% if like %>
+              <%= button_to 'Unlike', post_like_path(@post, like), method: :delete, class: 'btn btn-danger me-2' %>
+            <% else %>
+              <%= button_to 'Like', post_likes_path(@post), method: :post, class: 'btn btn-primary me-2' %>
+            <% end %>
+          <% end %>
+        </div>
+        <div>
+          <% if logged_in? && (current_user == @post.user || current_user.email == 'aly@gmail.com') %>
+              <%= link_to 'Edit', edit_post_path(@post), class: 'btn btn-outline-primary me-2' %>
+              <%= button_to 'Delete', @post, method: :delete, data: { confirm: 'Are you sure?' }, form: { class: 'd-inline' }, class: 'btn btn-danger' %>
+            <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="comments" class="mb-4">
+  <h4>Comments</h4>
+  <ul class="list-group mb-3">
+    <% @post.comments.order(created_at: :asc).each do |c| %>
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <div>
+          <strong><%= link_to c.user.name, c.user %></strong>
+          <div><%= c.body %></div>
+        </div>
+        <% if logged_in? && (c.user == current_user || @post.user == current_user) %>
+          <div><%= button_to 'Delete', post_comment_path(@post, c), method: :delete, data: { confirm: 'Delete comment?' }, form: { class: 'd-inline' }, class: 'btn btn-sm btn-outline-danger' %></div>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <% if logged_in? %>
+    <%= form_with model: [@post, @comment], local: true do |f| %>
+      <div class="d-flex align-items-start gap-2 mb-2">
+        <% if @post.image_url.present? %>
+          <div style="flex: 0 0 auto;">
+            <%= image_tag @post.image_url, alt: @post.title, class: 'rounded', style: 'width:64px;height:64px;object-fit:cover;' , onerror: "this.onerror=null;this.src='https://placehold.co/64x64/png?text=No+Img';" %>
+          </div>
+        <% end %>
+        <div style="flex: 1 1 auto;">
+          <%= f.text_area :body, rows: 3, class: 'form-control', placeholder: 'Write a comment...' %>
+        </div>
+      </div>
+      <%= f.submit 'Post Comment', class: 'btn btn-primary' %>
+    <% end %>
+  <% else %>
+    <p><%= link_to 'Log in', login_path %> to comment.</p>
+  <% end %>
+</section>
+
+<section class="mb-4">
+  <h4>Share</h4>
+  <div class="d-flex gap-2">
+    <% post_url = request.base_url + post_path(@post) %>
+    <a href="https://www.facebook.com/sharer/sharer.php?u=<%= CGI.escape(post_url) %>" target="_blank" class="btn btn-outline-primary">Facebook</a>
+    <a href="https://www.linkedin.com/sharing/share-offsite/?url=<%= CGI.escape(post_url) %>" target="_blank" class="btn btn-outline-info">LinkedIn</a>
+    <a href="https://twitter.com/intent/tweet?url=<%= CGI.escape(post_url) %>&text=<%= CGI.escape(@post.title) %>" target="_blank" class="btn btn-outline-secondary">Twitter</a>
+    <button type="button" class="btn btn-outline-dark" onclick="copyToClipboard('<%= post_url %>')">Copy link</button>
+  </div>
+</section>

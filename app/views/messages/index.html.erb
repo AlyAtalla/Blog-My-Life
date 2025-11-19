@@ -1,0 +1,57 @@
+<div class="row">
+  <div class="col-md-8">
+    <h3>Inbox</h3>
+
+    <%# Build a list of unique senders from received messages %>
+    <% senders = @messages.map(&:sender).compact.uniq %>
+
+    <% if senders.any? %>
+      <div class="list-group">
+        <% senders.each do |s| %>
+          <% latest = @messages.select { |m| m.sender_id == s.id }.max_by(&:created_at) %>
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong><%= link_to s.name, conversation_messages_path(s.id) %></strong>
+              <div class="small text-muted"><%= truncate(latest.body, length: 80) %></div>
+            </div>
+            <div class="text-end small">
+              <div><%= time_ago_in_words(latest.created_at) %> ago</div>
+              <div><%= link_to 'Open', conversation_messages_path(s.id), class: 'btn btn-sm btn-outline-primary mt-1' %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="alert alert-info">No messages yet. <%= link_to 'Send a message', new_message_path, class: 'btn btn-sm btn-primary ms-2' %></div>
+    <% end %>
+  </div>
+
+  <div class="col-md-4">
+    <h5>Actions</h5>
+    <%= link_to 'Compose', new_message_path, class: 'btn btn-primary mb-2' %>
+  </div>
+</div>
+<% content_for :title, 'Messages' %>
+
+<h2>Inbox</h2>
+
+<div class="list-group">
+  <% if @messages.any? %>
+    <% @messages.each do |m| %>
+      <%= link_to conversation_messages_path(m.sender_id), class: 'list-group-item list-group-item-action d-flex justify-content-between align-items-start' do %>
+        <div>
+          <strong><%= m.sender.name %></strong>
+          <div class="small text-muted"><%= truncate(m.body, length: 80) %></div>
+        </div>
+        <div class="text-end">
+          <div class="small text-muted"><%= time_ago_in_words(m.created_at) %> ago</div>
+          <% if m.read_at.nil? %>
+            <span class="badge bg-primary">New</span>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div class="alert alert-info">No messages yet.</div>
+  <% end %>
+</div>

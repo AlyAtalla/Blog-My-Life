@@ -1,0 +1,18 @@
+<div id="<%= dom_id post %>">
+  <div>
+    <strong>Title:</strong>
+    <%= post.title %>
+  </div>
+
+  <div>
+    <strong>Body:</strong>
+    <%= post.body %>
+  </div>
+
+  <div>
+    <strong>User:</strong>
+    <%= link_to post.user.name, post.user %>
+    <%= link_to 'Profile', post.user, class: 'btn btn-sm btn-outline-secondary ms-2' %>
+  </div>
+
+</div>

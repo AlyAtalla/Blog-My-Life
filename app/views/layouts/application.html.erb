@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Blog My Life" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <%= stylesheet_link_tag 'application', media: 'all', 'data-turbo-track': 'reload' %>
+    <%= javascript_importmap_tags %>
+    <style>
+      /* card hover scale */
+      .card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+      .card:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+      /* hero full-background tweak */
+      .hero-logged-in, .hero-guest { border-radius: .5rem; overflow: hidden; }
+
+      /* full-page background images */
+      body.bg-guest { background-image: url('https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=2000&q=80'); background-size: cover; background-position: center; background-attachment: fixed; }
+      body.bg-logged-in { background-image: url('https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?auto=format&fit=crop&w=2000&q=80'); background-size: cover; background-position: center; background-attachment: fixed; }
+      /* translucent content area for readability */
+      .content-surface { background: rgba(255,255,255,0.92); padding: 1.25rem; border-radius: .5rem; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+      @media (max-width: 768px) { .content-surface { padding: .75rem; } }
+      /* colorful gradients for post cards */
+      .post-card { position: relative; overflow: hidden; color: #222; }
+      .post-card .card-body { background: rgba(255,255,255,0.88); }
+      /* ensure card images have consistent size and cover */
+      .card-img-top { width: 100%; height: 200px; object-fit: cover; display: block; }
+      /* make all images responsive by default */
+      img { max-width: 100%; height: auto; }
+      .gradient-1 { background: linear-gradient(135deg,#FFDEE9 0%,#B5FFFC 100%); }
+      .gradient-2 { background: linear-gradient(135deg,#E0C3FC 0%,#8EC5FC 100%); }
+      .gradient-3 { background: linear-gradient(135deg,#F9D29D 0%,#F78FA7 100%); }
+      .gradient-4 { background: linear-gradient(135deg,#C9FFBF 0%,#FFAFBD 100%); }
+      .gradient-5 { background: linear-gradient(135deg,#A1C4FD 0%,#C2E9FB 100%); }
+      .gradient-6 { background: linear-gradient(135deg,#FF9A9E 0%,#FAD0C4 100%); }
+
+      /* entry animation: visible by default as a safety fallback when JS doesn't run */
+      .post-card { opacity: 1; transform: none; transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1); }
+      .post-card.visible { opacity: 1; transform: translateY(0) scale(1); }
+
+      /* pagination style tweak */
+      .pagination .page-item.active .page-link { background-color: #0d6efd; border-color: #0d6efd; color: white; }
+      /* dropdown icon visually distinct from the main navbar toggler */
+      .dropdown-icon { font-size: 1.1rem; display: inline-block; line-height: 1; padding: 0 .35rem; }
+      .dropdown-icon[aria-hidden] { color: inherit; }
+      /* ensure dropdown menus appear above page content (prevent being covered) */
+      .dropdown-menu { z-index: 2000; }
+      /* Ensure buttons sit above stretched-link overlays so clicks land on them */
+      .card .btn { position: relative; z-index: 3; }
+      /* Ensure comment UI sits above the stretched-link so textareas and buttons are interactive */
+      .post-card .comment-area { position: relative; z-index: 5; }
+      .post-card .comment-form { position: relative; z-index: 6; }
+      .post-card .comment-form textarea, .post-card .comment-form .btn { pointer-events: auto; }
+      /* small overlapping interactor avatar stack */
+      .interactor-avatar { box-shadow: 0 0 0 2px rgba(255,255,255,0.9); border: 2px solid #fff; }
+
+      /* Responsive tweaks for small screens */
+      @media (max-width: 992px) {
+        .card-img-top { height: 160px; }
+        .post-card .card-body { padding: 1rem; }
+        .interactor-avatar { width: 24px !important; height: 24px !important; }
+      }
+
+      @media (max-width: 768px) {
+        /* avoid fixed background on small devices (performance and readability) */
+        body.bg-guest, body.bg-logged-in { background-attachment: scroll; background-position: center; }
+        .card-img-top { height: 120px; }
+        .content-surface { padding: .6rem; }
+        .post-card .comment-area { padding: .5rem; }
+        .post-card .comment-form { position: static; z-index: auto; }
+        .interactor-avatar { width: 20px !important; height: 20px !important; margin-left: -6px !important; }
+        .post-card .card-body { background: rgba(255,255,255,0.96); }
+        #conversation { max-height: 50vh; }
+      }
+
+      @media (max-width: 480px) {
+        .card-img-top { height: 100px; }
+        .post-card { margin-bottom: 1rem; }
+        .post-card .card-body { padding: .75rem; }
+        .interactor-avatar { width: 18px !important; height: 18px !important; margin-left: -6px !important; }
+      }
+    </style>
+  </head>
+
+  <body class="<%= logged_in? ? 'bg-logged-in' : 'bg-guest' %>">
+    <% unless content_for?(:plain_layout) %>
+      <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+          <a class="navbar-brand" href="<%= root_path %>">Blog My Life</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav ms-auto align-items-center">
+              <% if logged_in? %>
+                <li class="nav-item d-none d-md-block"><span class="nav-link">Signed in as <%= current_user.name %></span></li>
+                <li class="nav-item d-none d-md-block"><%= link_to 'New Post', new_post_path, class: 'nav-link' %></li>
+                <li class="nav-item d-none d-md-block"><%= link_to messages_path, class: 'nav-link' do %>
+                  Messages <% if current_user.unread_messages_count.positive? %><span class="badge bg-light text-primary ms-1"><%= current_user.unread_messages_count %></span><% end %>
+                <% end %></li>
+
+                <!-- Account menu: replaced dual Bootstrap dropdowns with a single custom toggle -->
+                <!-- The button below is a single control (always visible) that opens a custom menu appended to document.body. -->
+                <li class="nav-item">
+                  <button id="userMenuToggle" class="btn btn-link p-0" aria-haspopup="true" aria-expanded="false" type="button" style="color:inherit;">
+                    <span class="dropdown-icon" aria-hidden="true">&#8942;</span>
+                  </button>
+                </li>
+              <% else %>
+                <li class="nav-item"><%= link_to 'Sign up', new_user_path, class: 'nav-link' %></li>
+                <li class="nav-item"><%= link_to 'Login', login_path, class: 'nav-link' %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+        <% if logged_in? %>
+          <!-- Custom account menu contents (kept here as template; menu will be moved to body when opened) -->
+          <template id="userMenuTemplate">
+            <ul class="dropdown-menu dropdown-menu-end" id="userMenuCustom" role="menu">
+              <li><%= link_to 'Home', root_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'My Profile', profile_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'My Posts', posts_path(user_id: current_user.id), class: 'dropdown-item' %></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><%= link_to 'New Post', new_post_path, class: 'dropdown-item' %></li>
+              <li>
+                <%= button_to 'Logout', logout_path, method: :delete, form: { class: 'd-inline' }, class: 'dropdown-item p-0 m-0' %>
+              </li>
+            </ul>
+          </template>
+        <% end %>
+      </nav>
+    <% end %>
+
+    <div class="container content-surface mt-3 mb-5">
+      <% flash.each do |k, v| %>
+        <% cls = k == 'notice' ? 'alert-success' : 'alert-danger' %>
+        <div class="alert <%= cls %> alert-dismissible fade show" role="alert">
+          <%= v %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      <% end %>
+
+      <main class="mb-5">
+        <%= yield %>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script>
+      // AJAX handlers for like/share without redirect
+      function initPostActions(){
+        if(document._postActionsBound) return; document._postActionsBound = true;
+        console.debug('initPostActions: delegated handlers bound');
+
+        // Use event delegation so handlers survive Turbo body replacements
+        document.addEventListener('click', async (e) => {
+          // Like / Unlike
+          const likeBtn = e.target.closest('.like-btn');
+          if(likeBtn){
+            e.preventDefault(); e.stopPropagation();
+            const postId = likeBtn.dataset.postId;
+            const liked = likeBtn.dataset.liked === 'true';
+            const likeId = likeBtn.dataset.likeId;
+            try{
+              if(liked){
+                const url = `/posts/${postId}/likes/${likeId || ''}`;
+                const resp = await fetch(url, { method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } });
+                if(resp.ok){ let json = null; try { json = await resp.json(); } catch(err){ json = null; }
+                  likeBtn.dataset.liked = 'false'; likeBtn.classList.remove('btn-danger'); likeBtn.classList.add('btn-primary'); likeBtn.textContent = 'Like';
+                  const likesEl = document.querySelector(`.likes-count[data-post-id="${postId}"]`);
+                  if(likesEl && json && typeof json.likes_count === 'number'){
+                    likesEl.textContent = json.likes_count + (json.likes_count === 1 ? ' like' : ' likes');
+                  }
+                  if(json && json.recent_actors){ const container = document.querySelector(`.interactors[data-post-id="${postId}"]`); if(container){ container.innerHTML=''; json.recent_actors.forEach((u,i)=>{ const img=document.createElement('img'); img.src=u.avatar_url||'https://placehold.co/40x40/png?text=U'; img.alt=u.name; img.className='interactor-avatar rounded-circle'; img.style.width='28px'; img.style.height='28px'; img.style.objectFit='cover'; img.style.border='2px solid #fff'; img.style.marginLeft=(i===0)?'0':'-8px'; container.appendChild(img); }); } }
+                } else { let text=null; try{text=await resp.text();}catch(err){text=null;} console.warn('unlike failed', resp.status, text); }
+              } else {
+                const resp = await fetch(`/posts/${postId}/likes`, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({}) });
+                if(resp.ok){ let json=null; try{ json = await resp.json(); }catch(err){ json=null; }
+                  likeBtn.dataset.liked='true'; likeBtn.dataset.likeId = json && json.id; likeBtn.classList.remove('btn-primary'); likeBtn.classList.add('btn-danger'); likeBtn.textContent='Unlike';
+                  const likesEl = document.querySelector(`.likes-count[data-post-id="${postId}"]`);
+                  if(likesEl && json && typeof json.likes_count === 'number'){ likesEl.textContent = json.likes_count + (json.likes_count === 1 ? ' like' : ' likes'); }
+                  if(json && json.recent_actors){ const container = document.querySelector(`.interactors[data-post-id="${postId}"]`); if(container){ container.innerHTML=''; json.recent_actors.forEach((u,i)=>{ const img=document.createElement('img'); img.src=u.avatar_url||'https://placehold.co/40x40/png?text=U'; img.alt=u.name; img.className='interactor-avatar rounded-circle'; img.style.width='28px'; img.style.height='28px'; img.style.objectFit='cover'; img.style.border='2px solid #fff'; img.style.marginLeft=(i===0)?'0':'-8px'; container.appendChild(img); }); } }
+                } else { let text=null; try{text=await resp.text();}catch(err){text=null;} console.warn('like create failed', resp.status, text); }
+              }
+            }catch(err){ console.warn('like action failed', err); }
+            return;
+          }
+
+          // Share
+          const shareBtn = e.target.closest('.share-btn');
+          if(shareBtn){ e.preventDefault(); e.stopPropagation(); const url = shareBtn.dataset.postUrl; try{ if(navigator.clipboard) navigator.clipboard.writeText(url).then(()=> alert('Link copied')); }catch(err){ alert('Copy failed'); } return; }
+
+          // Delete
+          const delBtn = e.target.closest('.delete-btn');
+          if(delBtn){ e.preventDefault(); e.stopPropagation(); if(!confirm('Delete this post?')) return; const url = delBtn.dataset.deleteUrl; try{ const resp = await fetch(url, { method: 'DELETE', headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content } }); if(resp.ok){ const col = delBtn.closest('.col-md-4'); if(col) col.remove(); } else { alert('Delete failed'); } }catch(err){ console.warn('delete failed', err); } return; }
+
+          // Comment toggle
+          const toggleBtn = e.target.closest('.comment-toggle');
+          if(toggleBtn){ e.preventDefault(); e.stopPropagation(); const container = toggleBtn.closest('.comment-area'); const form = container.querySelector('.comment-form'); form.style.display = (form.style.display === 'none' || !form.style.display) ? 'block' : 'none'; return; }
+
+          // Cancel comment
+          const cancelBtn = e.target.closest('.cancel-comment');
+          if(cancelBtn){ e.preventDefault(); e.stopPropagation(); const form = cancelBtn.closest('.comment-form'); if(form) form.style.display='none'; return; }
+
+          // Submit comment
+          const submitBtn = e.target.closest('.submit-comment');
+          if(submitBtn){ e.preventDefault(); e.stopPropagation(); const postId = submitBtn.dataset.postId; const form = submitBtn.closest('.comment-form'); const textarea = form.querySelector('.comment-body'); const body = textarea.value.trim(); if(!body) return alert('Enter a comment'); try{ const resp = await fetch(`/posts/${postId}/comments`, { method: 'POST', headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ comment: { body } }) }); if(resp.ok){ const json = await resp.json().catch(()=>null); textarea.value=''; form.style.display='none'; const commentsEl = document.querySelector(`.comments-count[data-post-id="${postId}"]`); if(commentsEl && json && json.comments_count !== undefined){ commentsEl.textContent = json.comments_count + (json.comments_count === 1 ? ' comment' : ' comments'); } if(json && json.recent_actors){ const container = document.querySelector(`.interactors[data-post-id="${postId}"]`); if(container){ container.innerHTML=''; json.recent_actors.forEach((u,i)=>{ const img=document.createElement('img'); img.src=u.avatar_url||'https://placehold.co/40x40/png?text=U'; img.alt=u.name; img.className='interactor-avatar rounded-circle'; img.style.width='28px'; img.style.height='28px'; img.style.objectFit='cover'; img.style.border='2px solid #fff'; img.style.marginLeft=(i===0)?'0':'-8px'; container.appendChild(img); }); } } alert('Comment posted'); } else { alert('Could not post comment'); } }catch(err){ console.warn('comment failed', err); } return; }
+        });
+      }
+      document.addEventListener('DOMContentLoaded', initPostActions);
+      document.addEventListener('turbo:load', initPostActions);
+      function copyToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(()=>{ alert('Link copied to clipboard') });
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed'; ta.style.left='-9999px';
+          document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+          alert('Link copied to clipboard');
+        }
+      }
+      // IntersectionObserver to reveal post cards with a tiny stagger.
+      // Initialize on full load and on Turbo visits so animations run after pagination.
+      function initPostCards() {
+        const cards = Array.from(document.querySelectorAll('.post-card'));
+        if(cards.length === 0) return;
+        if('IntersectionObserver' in window) {
+          let io = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+              if(entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                obs.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.08 });
+          cards.forEach((c, i) => { setTimeout(()=> io.observe(c), i * 80); });
+        } else {
+          cards.forEach((c)=> c.classList.add('visible'));
+        }
+
+        // Safety fallback: if Turbo navigation didn't trigger observation, reveal cards after 700ms
+        setTimeout(() => {
+          cards.forEach(c => c.classList.add('visible'));
+        }, 700);
+      }
+
+      document.addEventListener('DOMContentLoaded', initPostCards);
+      document.addEventListener('turbo:load', initPostCards);
+      // Ensure Bootstrap dropdowns are initialized after Turbo navigation
+      function initBootstrapDropdowns(){
+        try{
+          if(window.bootstrap && window.bootstrap.Dropdown){
+            const els = Array.from(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+            if(els.length === 0){ console.debug('initBootstrapDropdowns: no dropdown toggles found'); }
+            els.forEach(el => {
+              try{
+                // avoid re-initializing if already attached
+                if(!el._bootstrapDropdown){
+                  // store instance on element for idempotence
+                  el._bootstrapDropdown = new window.bootstrap.Dropdown(el);
+                  console.debug('initBootstrapDropdowns: attached Dropdown to', el);
+                } else {
+                  console.debug('initBootstrapDropdowns: already initialized', el);
+                }
+              }catch(e){ console.warn('initBootstrapDropdowns: failed for element', el, e); }
+            });
+          }
+        }catch(e){ console.error('Dropdown init error', e); }
+      }
+      document.addEventListener('DOMContentLoaded', initBootstrapDropdowns);
+      document.addEventListener('turbo:load', initBootstrapDropdowns);
+      // Ensure Collapse components (navbar collapse etc.) are initialized
+      // after Turbo navigations. Bootstrap's data-api may not re-bind on
+      // partial page updates, so create instances for target collapse
+      // elements without toggling them immediately.
+      function initBootstrapCollapses(){
+        try{
+          if(window.bootstrap && window.bootstrap.Collapse){
+            const toggles = Array.from(document.querySelectorAll('[data-bs-toggle="collapse"]'));
+            if(toggles.length === 0){ console.debug('initBootstrapCollapses: no collapse toggles found'); }
+            toggles.forEach(toggle => {
+              try{
+                // Determine target selector from data-bs-target or href
+                let selector = toggle.getAttribute('data-bs-target') || toggle.getAttribute('href');
+                if(!selector) return;
+                // If href is a full URL, extract the hash
+                try{ if(selector.startsWith(window.location.origin)) selector = (new URL(selector)).hash; }catch(e){}
+                if(!selector || selector.indexOf('#') === -1) return;
+                const targets = Array.from(document.querySelectorAll(selector));
+                targets.forEach(target => {
+                  try{
+                    // Avoid re-initializing an existing instance
+                    if(!bootstrap.Collapse.getInstance(target)){
+                      new bootstrap.Collapse(target, { toggle: false });
+                      console.debug('initBootstrapCollapses: initialized', target);
+                    } else {
+                      console.debug('initBootstrapCollapses: already initialized', target);
+                    }
+                  }catch(e){ console.warn('initBootstrapCollapses: failed for target', target, e); }
+                });
+              }catch(e){ console.warn('initBootstrapCollapses: toggle handling failed', e); }
+            });
+          }
+        }catch(e){ console.error('Bootstrap Collapse initialization error', e); }
+      }
+      document.addEventListener('DOMContentLoaded', initBootstrapCollapses);
+      document.addEventListener('turbo:load', initBootstrapCollapses);
+      // Custom, Turbo-safe account menu: uses a single button and moves the
+      // menu into document.body to avoid clipping/overlay issues. Idempotent
+      // and re-bound on turbo:load.
+      function initAccountMenu(){
+        try{
+          const btn = document.getElementById('userMenuToggle');
+          const tpl = document.getElementById('userMenuTemplate');
+          if(!btn || !tpl) { console.debug('initAccountMenu: button or template missing'); return; }
+
+          // Create menu instance from template if needed
+          if(!btn._menu){
+            const clone = tpl.content.firstElementChild.cloneNode(true);
+            // ensure id uniqueness if multiple instances
+            clone.id = 'userMenuCustom';
+            clone.style.display = 'none';
+            document.body.appendChild(clone);
+            btn._menu = clone;
+          }
+
+          const menu = btn._menu;
+
+          const openMenu = () => {
+            menu.style.display = 'block';
+            menu.classList.add('show');
+            menu._open = true;
+            // position menu aligned to button (right-aligned)
+            const rect = btn.getBoundingClientRect();
+            // make visible to measure
+            menu.style.position = 'absolute';
+            const mRect = menu.getBoundingClientRect();
+            const top = rect.bottom + window.scrollY + 6;
+            const left = Math.max(8, rect.right + window.scrollX - mRect.width);
+            menu.style.top = top + 'px';
+            menu.style.left = left + 'px';
+            btn.setAttribute('aria-expanded', 'true');
+          };
+
+          const closeMenu = () => {
+            menu.style.display = 'none';
+            menu.classList.remove('show');
+            menu._open = false;
+            btn.setAttribute('aria-expanded', 'false');
+          };
+
+          const outsideClick = (e) => {
+            if(!menu.contains(e.target) && e.target !== btn) closeMenu();
+          };
+
+          if(!btn._bound){
+            btn.addEventListener('click', (e)=>{
+              e.preventDefault(); e.stopPropagation();
+              try{
+                if(menu._open) closeMenu(); else openMenu();
+              }catch(err){ console.warn('account menu toggle error', err); }
+            });
+            document.addEventListener('click', outsideClick);
+            document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeMenu(); });
+            btn._bound = true;
+            console.debug('initAccountMenu: bound account menu');
+          }
+        }catch(e){ console.error('initAccountMenu error', e); }
+      }
+      document.addEventListener('DOMContentLoaded', initAccountMenu);
+      document.addEventListener('turbo:load', initAccountMenu);
+      // (No custom click binder here — rely on Bootstrap's data-api and the
+      // explicit initBootstrapDropdowns() run on DOMContentLoaded and turbo:load.)
+      // Fix: Some setups emit a link rel="preload" as="style" for application CSS.
+      // Browsers warn if a preloaded stylesheet isn't used quickly. Convert those
+      // preloads into actual stylesheet links so the resource is applied and
+      // the warning disappears. This is safe and idempotent.
+      function fixPreloadedStyles(){
+        try{
+          const preloads = Array.from(document.querySelectorAll('link[rel="preload"][as="style"]'));
+          if(preloads.length === 0) return;
+          preloads.forEach(l => {
+            const href = l.getAttribute('href');
+            try{
+              // If a stylesheet link with the same href already exists, just remove the preload
+              const existing = document.querySelector('link[rel="stylesheet"][href="' + href + '"]');
+              if(existing){
+                // replace rel so browser treats it like a stylesheet (avoid warning)
+                l.rel = 'stylesheet';
+                console.debug('fixPreloadedStyles: converted existing preload to stylesheet for', href);
+              } else {
+                l.rel = 'stylesheet';
+                console.debug('fixPreloadedStyles: converted preload to stylesheet for', href);
+              }
+            }catch(e){ console.warn('fixPreloadedStyles: element change failed', e); }
+          });
+        }catch(e){ console.warn('fixPreloadedStyles error', e); }
+      }
+      document.addEventListener('DOMContentLoaded', fixPreloadedStyles);
+      document.addEventListener('turbo:load', fixPreloadedStyles);
+      
+    </script>
+    <!-- EmailJS integration: client-side mail send + optional server persistence -->
+    <script src="https://cdn.emailjs.com/sdk/3.2.0/email.min.js"></script>
+    <script>
+      // EmailJS initialization now reads public keys from the form dataset.
+      // The contact form includes data-emailjs-service and data-emailjs-template
+      // and optionally data-emailjs-user (public key).
+      document.addEventListener('DOMContentLoaded', function(){
+        const form = document.getElementById('contact-form');
+        if(!form) return;
+
+        const EMAILJS_SERVICE = form.dataset.emailjsService || 'service_0og5zvn';
+        const EMAILJS_TEMPLATE = form.dataset.emailjsTemplate || 'YOUR_TEMPLATE_ID';
+        const EMAILJS_PUBLIC_ID = form.dataset.emailjsPublicId || 'YOUR_EMAILJS_PUBLIC_KEY';
+
+        // Initialize EmailJS if a non-placeholder public id is provided
+        try{ if(window.emailjs && EMAILJS_PUBLIC_ID && EMAILJS_PUBLIC_ID !== 'YOUR_EMAILJS_PUBLIC_KEY') emailjs.init(EMAILJS_PUBLIC_ID); }catch(e){ console.warn('emailjs.init failed', e); }
+
+        form.addEventListener('submit', async function(e){
+          // If user hasn't configured EmailJS client-side keys, let the form submit normally
+          const userSet = EMAILJS_PUBLIC_ID && EMAILJS_PUBLIC_ID !== 'YOUR_EMAILJS_PUBLIC_KEY';
+          const templateSet = EMAILJS_TEMPLATE && EMAILJS_TEMPLATE !== 'YOUR_TEMPLATE_ID';
+          if(!userSet || !templateSet){
+            return; // normal submit
+          }
+
+          e.preventDefault();
+          const submitBtn = form.querySelector('[type="submit"]');
+          if(submitBtn) submitBtn.disabled = true;
+
+          try{
+            // Send via EmailJS (client-side)
+            await emailjs.sendForm(EMAILJS_SERVICE, EMAILJS_TEMPLATE, '#contact-form');
+
+            // Persist server-side copy to ContactMessage#create
+            const formData = new FormData(form);
+            const token = document.querySelector('meta[name="csrf-token"]').content;
+            await fetch(form.action, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRF-Token': token } });
+
+            alert('Message sent — thank you!');
+            form.reset();
+          }catch(err){
+            console.error('EmailJS send error', err);
+            if(confirm('Sending failed via EmailJS. Submit via server instead?')){
+              form.submit();
+            }
+          }finally{
+            if(submitBtn) submitBtn.disabled = false;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

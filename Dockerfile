@@ -1,3 +1,41 @@
+FROM ruby:3.2-slim
+
+ENV RAILS_ENV=production
+ENV RACK_ENV=production
+ENV BUNDLE_PATH=/gems
+
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    nodejs \
+    yarn \
+    postgresql-client \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install bundler version consistent with Gemfile.lock if needed
+COPY Gemfile Gemfile.lock ./
+RUN gem install bundler -v 2.7.2 || true
+RUN bundle install --jobs 4 --retry 3 --without development test
+
+# JS packages (if you use yarn/npm)
+COPY package.json yarn.lock ./
+RUN if [ -f package.json ]; then yarn install --frozen-lockfile --production; fi
+
+# Copy app
+COPY . .
+
+# Precompile assets
+RUN if [ -f bin/rails ]; then mkdir -p tmp/pids; RAILS_ENV=production SECRET_KEY_BASE=dummy bundle exec rails assets:precompile; fi
+
+EXPOSE 8080
+
+# Puma listens on $PORT (default 8080 on Cloud Run)
+ENV PORT 8080
+
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]
 # syntax=docker/dockerfile:1
 # check=error=true
 

@@ -1,5 +1,5 @@
 class ContactMailer < ApplicationMailer
-  default to: ENV.fetch('CONTACT_RECEIVER_EMAIL', 'aliatalla93@gmail.com')
+  default to: ENV.fetch("CONTACT_RECEIVER_EMAIL", "aliatalla93@gmail.com")
 
   def notify(contact_message)
     @contact_message = contact_message

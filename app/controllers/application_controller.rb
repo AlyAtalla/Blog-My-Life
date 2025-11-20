@@ -26,12 +26,12 @@ class ApplicationController < ActionController::Base
 
   def require_login
     unless logged_in?
-      redirect_to login_path, alert: 'Please log in to continue'
+      redirect_to login_path, alert: "Please log in to continue"
     end
   end
 
   def record_not_found(exception = nil)
     logger.info "Record not found: #{exception&.message}"
-    redirect_to posts_path, alert: 'The requested item was not found.'
+    redirect_to posts_path, alert: "The requested item was not found."
   end
 end

@@ -42,15 +42,15 @@ Rails.application.configure do
 
   # Configure SMTP via environment variables. To send emails via Gmail, set these in your environment:
   # SMTP_ADDRESS=smtp.gmail.com SMTP_PORT=587 SMTP_USERNAME=your@gmail.com SMTP_PASSWORD=your_app_password CONTACT_RECEIVER_EMAIL=aliatalla93@gmail.com
-  if ENV['SMTP_ADDRESS'].present?
+  if ENV["SMTP_ADDRESS"].present?
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.raise_delivery_errors = true
     config.action_mailer.perform_deliveries = true
     config.action_mailer.smtp_settings = {
-      address: ENV['SMTP_ADDRESS'],
-      port: ENV.fetch('SMTP_PORT', 587).to_i,
-      user_name: ENV['SMTP_USERNAME'],
-      password: ENV['SMTP_PASSWORD'],
+      address: ENV["SMTP_ADDRESS"],
+      port: ENV.fetch("SMTP_PORT", 587).to_i,
+      user_name: ENV["SMTP_USERNAME"],
+      password: ENV["SMTP_PASSWORD"],
       authentication: :login,
       enable_starttls_auto: true
     }

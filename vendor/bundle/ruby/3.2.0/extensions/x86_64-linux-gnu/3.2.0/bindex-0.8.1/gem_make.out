@@ -1,0 +1,24 @@
+current directory: /mnt/d/Github/Blog-My-Life/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+/usr/bin/ruby3.2 -I/usr/lib/ruby/vendor_ruby extconf.rb
+creating Makefile
+
+current directory: /mnt/d/Github/Blog-My-Life/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+make DESTDIR\= sitearchdir\=./.gem.20251119-9778-jlvksz sitelibdir\=./.gem.20251119-9778-jlvksz clean
+make: Warning: File 'Makefile' has modification time 0.35 s in the future
+make: warning:  Clock skew detected.  Your build may be incomplete.
+
+current directory: /mnt/d/Github/Blog-My-Life/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+make DESTDIR\= sitearchdir\=./.gem.20251119-9778-jlvksz sitelibdir\=./.gem.20251119-9778-jlvksz
+make: Warning: File 'Makefile' has modification time 0.3 s in the future
+compiling cruby.c
+linking shared-object skiptrace/internal/cruby.so
+make: warning:  Clock skew detected.  Your build may be incomplete.
+
+current directory: /mnt/d/Github/Blog-My-Life/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+make DESTDIR\= sitearchdir\=./.gem.20251119-9778-jlvksz sitelibdir\=./.gem.20251119-9778-jlvksz install
+make: Warning: File 'cruby.so' has modification time 0.35 s in the future
+/usr/bin/install -c -m 0755 cruby.so ./.gem.20251119-9778-jlvksz/skiptrace/internal
+make: warning:  Clock skew detected.  Your build may be incomplete.
+
+current directory: /mnt/d/Github/Blog-My-Life/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+make DESTDIR\= sitearchdir\=./.gem.20251119-9778-jlvksz sitelibdir\=./.gem.20251119-9778-jlvksz clean

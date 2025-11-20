@@ -6,13 +6,13 @@ class LikesController < ApplicationController
     like = @post.likes.build(user: current_user)
     if like.save
       respond_to do |format|
-        format.html { redirect_back fallback_location: @post, notice: 'Liked' }
+        format.html { redirect_back fallback_location: @post, notice: "Liked" }
         format.json { render json: { id: like.id, likes_count: @post.likes.count, recent_actors: @post.recent_interactors(4).map { |u| { id: u.id, name: u.name, avatar_url: u.avatar_url } } }, status: :created }
       end
     else
       respond_to do |format|
-        format.html { redirect_back fallback_location: @post, alert: 'Unable to like' }
-        format.json { render json: { error: 'Unable to like' }, status: :unprocessable_entity }
+        format.html { redirect_back fallback_location: @post, alert: "Unable to like" }
+        format.json { render json: { error: "Unable to like" }, status: :unprocessable_entity }
       end
     end
   end
@@ -25,8 +25,8 @@ class LikesController < ApplicationController
 
     if like.nil?
       respond_to do |format|
-        format.html { redirect_back fallback_location: @post, alert: 'Like not found' }
-        format.json { render json: { error: 'Like not found' }, status: :not_found }
+        format.html { redirect_back fallback_location: @post, alert: "Like not found" }
+        format.json { render json: { error: "Like not found" }, status: :not_found }
       end
       return
     end
@@ -34,13 +34,13 @@ class LikesController < ApplicationController
     if like.user == current_user
       like.destroy
       respond_to do |format|
-        format.html { redirect_back fallback_location: @post, notice: 'Unliked' }
+        format.html { redirect_back fallback_location: @post, notice: "Unliked" }
         format.json { render json: { likes_count: @post.likes.count, recent_actors: @post.recent_interactors(4).map { |u| { id: u.id, name: u.name, avatar_url: u.avatar_url } } }, status: :ok }
       end
     else
       respond_to do |format|
-        format.html { redirect_back fallback_location: @post, alert: 'Not authorized' }
-        format.json { render json: { error: 'Not authorized' }, status: :forbidden }
+        format.html { redirect_back fallback_location: @post, alert: "Not authorized" }
+        format.json { render json: { error: "Not authorized" }, status: :forbidden }
       end
     end
   end

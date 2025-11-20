@@ -21,10 +21,10 @@ class Post < ApplicationRecord
     # Collect pairs of [user, timestamp]
     pairs = []
     likes.includes(:user).each do |l|
-      pairs << [l.user, l.created_at] if l.user
+      pairs << [ l.user, l.created_at ] if l.user
     end
     comments.includes(:user).each do |c|
-      pairs << [c.user, c.created_at] if c.user
+      pairs << [ c.user, c.created_at ] if c.user
     end
 
     # Reduce to latest timestamp per user
